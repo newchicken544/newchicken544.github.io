@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boom Bam - EAS Scenario with Cheeseburgers</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #0f172a;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem 1rem;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -2px;
+      margin: 0 0 1.5rem 0;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+    }
+    .player-card {
+      width: 100%;
+      max-width: 800px;
+      background: #1e293b;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid #334155;
+      margin-bottom: 2rem;
+    }
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #000;
+    }
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .video-info {
+      padding: 1rem 1.25rem;
+      text-align: center;
+    }
+    .video-title {
+      color: #f8fafc;
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem 0;
+    }
+    .video-channel {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* --- Custom Images Styles --- */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      width: 100%;
+      max-width: 800px;
+    }
+    .custom-img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain; /* Good for icons/logos like the burger */
+      border-radius: 12px;
+      border: 1px solid #334155;
+      transition: transform 0.2s ease;
+      background-color: #1e293b; /* Match card background */
+    }
+    .custom-img:hover {
+      transform: scale(1.03);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Boom Bam</h1>
+
+  <!-- Video Player -->
+  <div class="player-card">
+    <div class="video-wrapper">
+      <iframe 
+        src="https://www.youtube.com/embed/OwKTm3An_-Q" 
+        title="EAS Scenario: BCC Kids Shutdown Part 2"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+        allowfullscreen>
+      </iframe>
+    </div>
+    <div class="video-info">
+      <p class="video-title">EAS Scenario: BCC Kids Shutdown Part 2</p>
+      <p class="video-channel">By JakeSugarNYC2026</p>
+    </div>
+  </div>
+
+  <!-- Custom Image Gallery -->
+  <div class="image-grid">
+    <!-- Use the provided burger image for all placeholders -->
+    <img src="image_0.png" alt="Cartoon Cheeseburger 1" class="custom-img">
+    <img src="image_0.png" alt="Cartoon Cheeseburger 2" class="custom-img">
+    <img src="image_0.png" alt="Cartoon Cheeseburger 3" class="custom-img">
+  </div>
+
+</body>
+</html>
