@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GD Platformer - Bloodbath Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      background: #050002;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    
+    #game-container {
+      position: relative;
+      touch-action: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    canvas {
+      border: 3px solid #ff0033;
+      box-shadow: 0 0 35px rgba(255, 0, 51, 0.4);
+      border-radius: 4px;
+      max-width: 95vw;
+      max-height: 55vh;
+      object-fit: contain;
+      touch-action: none;
+    }
+
+    /* Start / Audio Overlay */
+    #audio-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 0, 2, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #audio-overlay h2 {
+      color: #ff0033;
+      margin: 0 0 10px 0;
+      text-shadow: 0 0 15px #ff0033;
+    }
+
+    #audio-overlay p {
+      color: #ccc;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    /* Top Overlay Buttons */
+    .top-btn {
+      position: absolute;
+      top: 10px;
+      background: rgba(20, 0, 5, 0.85);
+      border: 1px solid #ff0033;
+      color: #ff0033;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 25;
+      box-shadow: 0 0 10px rgba(255, 0, 51, 0.3);
+      touch-action: manipulation;
+    }
+
+    .top-btn:hover {
+      background: #ff0033;
+      color: #000;
+    }
+
+    #menu-toggle-btn {
+      right: 10px;
+    }
+
+    #pc-reset-btn {
+      left: 10px;
+      color: #ff8800;
+      border-color: #ff8800;
+      box-shadow: 0 0 10px rgba(255, 136, 0, 0.3);
+    }
+
+    #pc-reset-btn:hover {
+      background: #ff8800;
+      color: #000;
+    }
+
+    #megahack-menu {
+      display: none;
+      position: absolute;
+      top: 45px;
+      right: 10px;
+      width: 280px;
+      max-height: 75vh;
+      overflow-y: auto;
+      background: rgba(15, 2, 5, 0.95);
+      border: 2px solid #ff0033;
+      border-radius: 8px;
+      box-shadow: 0 0 25px rgba(255, 0, 51, 0.5);
+      backdrop-filter: blur(8px);
+      padding: 15px;
+      z-index: 30;
+    }
+
+    #megahack-menu h3 {
+      margin: 0 0 12px 0;
+      color: #ff0033;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-size: 16px;
+      border-bottom: 1px solid rgba(255, 0, 51, 0.3);
+      padding-bottom: 8px;
+    }
+
+    .hack-group {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .hack-group label {
+      cursor: pointer;
+    }
+
+    .hack-group input[type="checkbox"] {
+      accent-color: #ff0033;
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    .hack-group input[type="range"] {
+      accent-color: #ff0033;
+      width: 90px;
+      cursor: pointer;
+    }
+
+    .hack-group select, .hack-group input[type="color"] {
+      background: #1a0005;
+      color: #fff;
+      border: 1px solid #ff0033;
+      border-radius: 4px;
+      padding: 2px 5px;
+      cursor: pointer;
+    }
+
+    .custom-file-upload {
+      border: 1px dashed #ff0033;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    /* --- MOBILE CONTROLS --- */
+    #mobile-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 12px;
+      padding: 0 15px;
+      z-index: 10;
+      touch-action: none;
+    }
+
+    /* Hide Mobile Controls on PC/Desktop Mouse Input */
+    @media (hover: hover) and (pointer: fine) {
+      #mobile-controls {
+        display: none !important;
+      }
+    }
+
+    /* Hide PC Reset Button on pure Touch Devices */
+    @media (hover: none) and (pointer: coarse) {
+      #pc-reset-btn {
+        display: none !important;
+      }
+    }
+
+    .dpad-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .touch-btn {
+      background: rgba(30, 0, 10, 0.85);
+      border: 2px solid #ff0033;
+      color: #ff0033;
+      font-size: 22px;
+      font-weight: bold;
+      border-radius: 12px;
+      width: 65px;
+      height: 65px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(255, 0, 51, 0.3);
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    .touch-btn:active, .touch-btn.active {
+      background: #ff0033;
+      color: #000;
+      box-shadow: 0 0 25px rgba(255, 0, 51, 0.9);
+    }
+
+    .jump-btn {
+      width: 100px;
+      height: 65px;
+      background: rgba(50, 0, 15, 0.85);
+      font-size: 18px;
+    }
+
+    .restart-btn {
+      width: 65px;
+      height: 65px;
+      font-size: 22px;
+      color: #ff8800;
+      border-color: #ff8800;
+    }
+
+    .restart-btn:active, .restart-btn.active {
+      background: #ff8800;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="color: #ff0033; text-shadow: 0 0 10px #ff0033; margin: 5px 0; font-size: 20px;">BLOODBATH - Extreme Demon</h2>
+
+  <div id="game-container">
+    <canvas id="game" width="800" height="400"></canvas>
+    
+    <div id="audio-overlay">
+      <h2>CLICK / TAP TO PLAY</h2>
+      <p>At_the_Speed_of_Light.mp3</p>
+    </div>
+
+    <!-- PC Reset & Mega Hack Buttons -->
+    <button class="top-btn" id="pc-reset-btn">↺ Reset (R)</button>
+    <button class="top-btn" id="menu-toggle-btn">⚙ Mega Hack</button>
+
+    <div id="megahack-menu">
+      <h3>Mega Hack v1.3</h3>
+
+      <div class="hack-group">
+        <label for="musicToggle">Song Audio</label>
+        <input type="checkbox" id="musicToggle" checked onchange="toggleMusic(this.checked)">
+      </div>
+
+      <div class="hack-group">
+        <label for="volumeSlider">Volume</label>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.5" oninput="setMusicVolume(this.value)">
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 12px; color: #ff0033;">Load Local Audio File:</label>
+        <input type="file" id="localAudio" accept="audio/*" onchange="loadLocalAudio(event)" style="display: none;">
+        <div class="custom-file-upload" onclick="document.getElementById('localAudio').click()">
+          📁 Choose Local MP3 File
+        </div>
+      </div>
+      
+      <div class="hack-group">
+        <label for="noclip">Noclip (Invincible)</label>
+        <input type="checkbox" id="noclip" onchange="hacks.noclip = this.checked">
+      </div>
+
+      <div class="hack-group">
+        <label for="infJump">Infinite Jump</label>
+        <input type="checkbox" id="infJump" onchange="hacks.infJump = this.checked">
+      </div>
+
+      <div class="hack-group">
+        <label for="showHitboxes">Show Hitboxes</label>
+        <input type="checkbox" id="showHitboxes" onchange="hacks.showHitboxes = this.checked">
+      </div>
+
+      <div class="hack-group">
+        <label for="showFps">Show FPS Counter</label>
+        <input type="checkbox" id="showFps" checked onchange="hacks.showFps = this.checked">
+      </div>
+
+      <div class="hack-group">
+        <label for="speedhack">Speedhack</label>
+        <select id="speedhack" onchange="hacks.speedhack = parseFloat(this.value)">
+          <option value="0.5">0.5x</option>
+          <option value="1.0" selected>1.0x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2.0">2.0x</option>
+        </select>
+      </div>
+
+      <div class="hack-group">
+        <label for="playerColor">Player Color</label>
+        <input type="color" id="playerColor" value="#ff0033" onchange="hacks.color = this.value">
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile On-Screen Controls (Auto-hidden on PC) -->
+  <div id="mobile-controls">
+    <div class="dpad-group">
+      <button id="btn-left" class="touch-btn">◀</button>
+      <button id="btn-right" class="touch-btn">▶</button>
+    </div>
+    <div class="dpad-group">
+      <button id="btn-restart" class="touch-btn restart-btn">↺</button>
+      <button id="btn-jump" class="touch-btn jump-btn">JUMP</button>
+    </div>
+  </div>
+
+  <audio id="bg-music" preload="auto" loop>
+    <source src="At_the_Speed_of_Light.mp3" type="audio/mpeg">
+    <source src="https://audio.ngfiles.com/467000/467339_At_the_Speed_of_Light.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const bgMusic = document.getElementById('bg-music');
+    const audioOverlay = document.getElementById('audio-overlay');
+
+    bgMusic.volume = 0.5;
+
+    // Additional JS fallback to hide mobile controls on non-touch desktop devices
+    if (!('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+      const mobileControls = document.getElementById('mobile-controls');
+      if (mobileControls) mobileControls.style.display = 'none';
+    }
+
+    const hacks = {
+      noclip: false,
+      infJump: false,
+      showHitboxes: false,
+      showFps: true,
+      speedhack: 1.0,
+      color: '#ff0033',
+      musicEnabled: true
+    };
+
+    function startAudioTrack() {
+      audioOverlay.style.display = 'none';
+      if (hacks.musicEnabled) {
+        bgMusic.currentTime = 0;
+        bgMusic.play().catch(err => {
+          console.warn("Audio play blocked or file missing:", err);
+        });
+      }
+    }
+
+    audioOverlay.addEventListener('pointerdown', startAudioTrack);
+
+    function toggleMusic(enabled) {
+      hacks.musicEnabled = enabled;
+      if (enabled) {
+        bgMusic.play();
+      } else {
+        bgMusic.pause();
+      }
+    }
+
+    function setMusicVolume(val) {
+      bgMusic.volume = parseFloat(val);
+    }
+
+    function loadLocalAudio(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const fileURL = URL.createObjectURL(file);
+        bgMusic.src = fileURL;
+        bgMusic.currentTime = 0;
+        if (hacks.musicEnabled) {
+          bgMusic.play();
+        }
+      }
+    }
+
+    function toggleMenu() {
+      const menu = document.getElementById('megahack-menu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.getElementById('menu-toggle-btn').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    document.getElementById('pc-reset-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      respawn();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Tab') {
+        e.preventDefault();
+        toggleMenu();
+      }
+    });
+
+    // --- ENGINE CONSTANTS ---
+    const CUBE_SIZE = 30;
+    const GROUND_Y = 320;
+    const CEILING_Y = 40;
+    const ACCEL = 0.85;
+    const FRICTION = 0.82;
+    const MAX_SPEED = 7.5;
+    const LEVEL_START_X = 100;
+    const LEVEL_END_X = 2900;
+
+    let attempts = 1;
+
+    const player = {
+      x: LEVEL_START_X,
+      y: GROUND_Y - CUBE_SIZE,
+      vx: 0,
+      vy: 0,
+      rotation: 0,
+      mode: 'cube',
+      gravityDir: 1,
+      isGrounded: true,
+      facingLeft: false,
+      dead: false,
+      completed: false
+    };
+
+    // --- BLOODBATH LEVEL GEOMETRY ---
+    const platforms = [
+      { x: 300, y: 240, w: 100, h: 20 },
+      { x: 500, y: 180, w: 90, h: 20 },
+      { x: 750, y: 80, w: 550, h: 30 },
+      { x: 850, y: 220, w: 120, h: 20 },
+      { x: 1100, y: 260, w: 150, h: 20 },
+      { x: 1500, y: 240, w: 80, h: 20 },
+      { x: 1680, y: 200, w: 80, h: 20 },
+      { x: 1860, y: 160, w: 80, h: 20 },
+      { x: 2150, y: 120, w: 600, h: 20 },
+      { x: 2150, y: 240, w: 600, h: 20 }
+    ];
+
+    const spikes = [
+      { x: 240, y: GROUND_Y },
+      { x: 420, y: GROUND_Y },
+      { x: 445, y: GROUND_Y },
+      { x: 650, y: GROUND_Y },
+      { x: 675, y: GROUND_Y },
+      { x: 700, y: GROUND_Y },
+      { x: 800, y: 110, upsideDown: true },
+      { x: 950, y: 110, upsideDown: true },
+      { x: 1050, y: GROUND_Y },
+      { x: 1250, y: 110, upsideDown: true },
+      { x: 1400, y: GROUND_Y },
+      { x: 1425, y: GROUND_Y },
+      { x: 1450, y: GROUND_Y },
+      { x: 1600, y: GROUND_Y },
+      { x: 1780, y: GROUND_Y },
+      { x: 2250, y: 140, upsideDown: true },
+      { x: 2350, y: 220 },
+      { x: 2450, y: 140, upsideDown: true },
+      { x: 2550, y: 220 },
+      { x: 2650, y: 140, upsideDown: true }
+    ];
+
+    const portals = [
+      { x: 540, y: 120, category: 'gravity', value: -1, color: '#ffff00' }, 
+      { x: 680, y: 100, category: 'gravity', value: 1, color: '#0088ff' },  
+      { x: 740, y: 180, category: 'mode', value: 'ship', color: '#ff00aa' },  
+
+      { x: 1000, y: 180, category: 'gravity', value: -1, color: '#ffff00' }, 
+      { x: 1280, y: 180, category: 'gravity', value: 1, color: '#0088ff' },  
+      { x: 1350, y: 180, category: 'mode', value: 'ufo', color: '#ff8800' },   
+
+      { x: 1750, y: 160, category: 'gravity', value: -1, color: '#ffff00' }, 
+      { x: 2000, y: 180, category: 'gravity', value: 1, color: '#0088ff' },  
+      { x: 2050, y: 180, category: 'mode', value: 'ship', color: '#ff00aa' }, 
+
+      { x: 2400, y: 180, category: 'gravity', value: -1, color: '#ffff00' }, 
+      { x: 2750, y: 180, category: 'gravity', value: 1, color: '#0088ff' },  
+      { x: 2800, y: 180, category: 'mode', value: 'cube', color: '#00ff66' }  
+    ];
+
+    // --- INPUT CONTROLS ---
+    const keys = { left: false, right: false, up: false, upPressed: false };
+
+    function triggerJumpPress() {
+      if (player.dead || player.completed) {
+        respawn();
+      } else {
+        if (!keys.up) keys.upPressed = true;
+        keys.up = true;
+      }
+    }
+
+    function triggerJumpRelease() {
+      keys.up = false;
+    }
+
+    // Keyboard Listeners
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
+      if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') triggerJumpPress();
+      if (e.code === 'KeyR') respawn(); // Press 'R' on PC anytime to reset
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+      if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') triggerJumpRelease();
+    });
+
+    // Mobile Pointer Event Binding
+    function bindPointerControl(id, onDown, onUp) {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const start = (e) => {
+        e.preventDefault();
+        el.classList.add('active');
+        onDown();
+      };
+
+      const end = (e) => {
+        e.preventDefault();
+        el.classList.remove('active');
+        if (onUp) onUp();
+      };
+
+      el.addEventListener('pointerdown', start);
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+      el.addEventListener('pointerleave', end);
+    }
+
+    bindPointerControl('btn-left', () => keys.left = true, () => keys.left = false);
+    bindPointerControl('btn-right', () => keys.right = true, () => keys.right = false);
+    bindPointerControl('btn-jump', triggerJumpPress, triggerJumpRelease);
+    bindPointerControl('btn-restart', () => respawn());
+
+    // Canvas click/tap controls
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      triggerJumpPress();
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      triggerJumpRelease();
+    });
+
+    canvas.addEventListener('pointercancel', (e) => {
+      e.preventDefault();
+      triggerJumpRelease();
+    });
+
+    function respawn() {
+      if (player.dead) attempts++;
+      player.x = LEVEL_START_X;
+      player.y = GROUND_Y - CUBE_SIZE;
+      player.vx = 0;
+      player.vy = 0;
+      player.rotation = 0;
+      player.mode = 'cube';
+      player.gravityDir = 1;
+      player.dead = false;
+      player.completed = false;
+
+      if (hacks.musicEnabled && audioOverlay.style.display === 'none') {
+        bgMusic.currentTime = 0;
+        bgMusic.play().catch(() => {});
+      }
+    }
+
+    function handleDeath() {
+      player.dead = true;
+      bgMusic.pause();
+    }
+
+    // --- PHYSICS ENGINE ---
+    function updatePhysics() {
+      if (player.dead || player.completed) return;
+
+      if (keys.left) {
+        player.vx -= ACCEL;
+        player.facingLeft = true;
+      }
+      if (keys.right) {
+        player.vx += ACCEL;
+        player.facingLeft = false;
+      }
+
+      player.vx *= FRICTION;
+      if (player.vx > MAX_SPEED) player.vx = MAX_SPEED;
+      if (player.vx < -MAX_SPEED) player.vx = -MAX_SPEED;
+      player.x += player.vx;
+
+      if (player.x >= LEVEL_END_X) {
+        player.completed = true;
+        player.vx = 0;
+        player.vy = 0;
+        return;
+      }
+
+      const gDir = player.gravityDir;
+
+      if (player.mode === 'cube') {
+        if ((keys.upPressed && player.isGrounded) || (keys.upPressed && hacks.infJump)) {
+          player.vy = -12 * gDir;
+          player.isGrounded = false;
+        }
+
+        player.vy += 0.7 * gDir;
+        player.y += player.vy;
+
+        player.isGrounded = false;
+
+        if (gDir === 1 && player.y >= GROUND_Y - CUBE_SIZE) {
+          player.y = GROUND_Y - CUBE_SIZE;
+          player.vy = 0;
+          player.isGrounded = true;
+        } else if (gDir === -1 && player.y <= CEILING_Y) {
+          player.y = CEILING_Y;
+          player.vy = 0;
+          player.isGrounded = true;
+        }
+
+        for (let plat of platforms) {
+          if (player.x + CUBE_SIZE > plat.x && player.x < plat.x + plat.w) {
+            if (gDir === 1 && player.y + CUBE_SIZE >= plat.y && player.y + CUBE_SIZE <= plat.y + 15 && player.vy >= 0) {
+              player.y = plat.y - CUBE_SIZE;
+              player.vy = 0;
+              player.isGrounded = true;
+            } else if (gDir === -1 && player.y <= plat.y + plat.h && player.y >= plat.y + plat.h - 15 && player.vy <= 0) {
+              player.y = plat.y + plat.h;
+              player.vy = 0;
+              player.isGrounded = true;
+            }
+          }
+        }
+
+        if (!player.isGrounded) {
+          const rotDir = (player.facingLeft ? -8.5 : 8.5) * gDir;
+          player.rotation += rotDir;
+        } else {
+          player.rotation = Math.round(player.rotation / 90) * 90;
+        }
+
+      } else if (player.mode === 'ship') {
+        if (keys.up) {
+          player.vy -= 0.65 * gDir;
+        } else {
+          player.vy += 0.45 * gDir;
+        }
+
+        if (player.vy > 7) player.vy = 7;
+        if (player.vy < -7) player.vy = -7;
+
+        player.y += player.vy;
+        player.rotation = player.vy * 4 * (player.facingLeft ? -1 : 1);
+
+        if (player.y < CEILING_Y) {
+          player.y = CEILING_Y;
+          player.vy = 0;
+        }
+
+        if (player.y >= GROUND_Y - CUBE_SIZE) {
+          player.y = GROUND_Y - CUBE_SIZE;
+          player.vy = 0;
+        }
+
+        for (let plat of platforms) {
+          if (
+            player.x + CUBE_SIZE > plat.x &&
+            player.x < plat.x + plat.w &&
+            player.y < plat.y + plat.h &&
+            player.y + CUBE_SIZE > plat.y
+          ) {
+            if (!hacks.noclip) handleDeath();
+          }
+        }
+
+      } else if (player.mode === 'ufo') {
+        if (keys.upPressed || (keys.up && hacks.infJump)) {
+          player.vy = -8.5 * gDir;
+        }
+
+        player.vy += 0.55 * gDir;
+        player.y += player.vy;
+
+        player.rotation = player.vy * 2.5 * (player.facingLeft ? -1 : 1);
+
+        if (player.y < CEILING_Y) {
+          player.y = CEILING_Y;
+          player.vy = 0;
+        }
+
+        if (player.y >= GROUND_Y - CUBE_SIZE) {
+          player.y = GROUND_Y - CUBE_SIZE;
+          player.vy = 0;
+        }
+
+        for (let plat of platforms) {
+          if (
+            player.x + CUBE_SIZE > plat.x &&
+            player.x < plat.x + plat.w &&
+            player.y < plat.y + plat.h &&
+            player.y + CUBE_SIZE > plat.y
+          ) {
+            if (!hacks.noclip) handleDeath();
+          }
+        }
+      }
+
+      for (let portal of portals) {
+        if (
+          player.x + CUBE_SIZE > portal.x - 15 &&
+          player.x < portal.x + 15 &&
+          player.y + CUBE_SIZE > portal.y - 40 &&
+          player.y < portal.y + 40
+        ) {
+          if (portal.category === 'mode') {
+            player.mode = portal.value;
+          } else if (portal.category === 'gravity') {
+            player.gravityDir = portal.value;
+          }
+        }
+      }
+
+      if (!hacks.noclip) {
+        for (let spike of spikes) {
+          const sy = spike.upsideDown ? spike.y : spike.y - 28;
+          if (
+            player.x + CUBE_SIZE > spike.x - 12 &&
+            player.x < spike.x + 12 &&
+            player.y + CUBE_SIZE > sy &&
+            player.y < sy + 28
+          ) {
+            handleDeath();
+          }
+        }
+      }
+
+      keys.upPressed = false;
+    }
+
+    // --- RENDER LOGIC ---
+    let frameCount = 0;
+    let fps = 60;
+    let lastFpsUpdate = performance.now();
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cameraX = player.x - canvas.width / 2 + CUBE_SIZE / 2;
+
+      ctx.save();
+      ctx.translate(-cameraX, 0);
+
+      // Floor
+      ctx.fillStyle = '#1c0005';
+      ctx.fillRect(cameraX, GROUND_Y, canvas.width, 80);
+      ctx.strokeStyle = '#ff0033';
+      ctx.shadowColor = '#ff0033';
+      ctx.shadowBlur = 15;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cameraX, GROUND_Y);
+      ctx.lineTo(cameraX + canvas.width, GROUND_Y);
+      ctx.stroke();
+
+      // Ceiling
+      ctx.beginPath();
+      ctx.moveTo(cameraX, CEILING_Y);
+      ctx.lineTo(cameraX + canvas.width, CEILING_Y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Platforms
+      for (let plat of platforms) {
+        ctx.fillStyle = '#2b030a';
+        ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+        ctx.strokeStyle = '#ff0033';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+      }
+
+      // Portals
+      for (let portal of portals) {
+        ctx.fillStyle = portal.color;
+        ctx.shadowColor = portal.color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.ellipse(portal.x, portal.y, 15, 40, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Spikes
+      ctx.fillStyle = '#ff0033';
+      ctx.shadowColor = '#ff0033';
+      ctx.shadowBlur = 10;
+      for (let spike of spikes) {
+        ctx.beginPath();
+        if (spike.upsideDown) {
+          ctx.moveTo(spike.x - 15, spike.y);
+          ctx.lineTo(spike.x + 15, spike.y);
+          ctx.lineTo(spike.x, spike.y + 28);
+        } else {
+          ctx.moveTo(spike.x - 15, spike.y);
+          ctx.lineTo(spike.x + 15, spike.y);
+          ctx.lineTo(spike.x, spike.y - 28);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // Player Entity Renderer
+      function drawPlayerEntity(x, y, color, alpha, mode, rotation, facingLeft, gDir) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(x + CUBE_SIZE / 2, y + CUBE_SIZE / 2);
+        ctx.scale(1, gDir);
+        ctx.rotate((rotation * Math.PI) / 180);
+
+        if (mode === 'ship') {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          if (facingLeft) {
+            ctx.moveTo(15, -10);
+            ctx.lineTo(-20, 0);
+            ctx.lineTo(15, 10);
+          } else {
+            ctx.moveTo(-15, -10);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(-15, 10);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ff0033';
+          ctx.fillRect(-6, -12, 12, 12);
+
+        } else if (mode === 'ufo') {
+          ctx.fillStyle = 'rgba(0, 240, 255, 0.7)';
+          ctx.beginPath();
+          ctx.arc(0, -4, 12, Math.PI, 0);
+          ctx.fill();
+          ctx.strokeStyle = '#00f0ff';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.ellipse(0, 4, 18, 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#000';
+          const eyeX = facingLeft ? -6 : 2;
+          ctx.fillRect(eyeX, -8, 4, 4);
+
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(-CUBE_SIZE / 2, -CUBE_SIZE / 2, CUBE_SIZE, CUBE_SIZE);
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-CUBE_SIZE / 2, -CUBE_SIZE / 2, CUBE_SIZE, CUBE_SIZE);
+
+          ctx.fillStyle = '#000';
+          const eyeX = facingLeft ? -10 : 4;
+          ctx.fillRect(eyeX, -8, 6, 6);
+        }
+
+        ctx.restore();
+      }
+
+      // Draw Player
+      if (!player.dead) {
+        drawPlayerEntity(player.x, player.y, hacks.color, 1.0, player.mode, player.rotation, player.facingLeft, player.gravityDir);
+      } else {
+        ctx.fillStyle = '#ff0033';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('BLOODBATH CRASHED! Press [R] to Respawn', player.x - 220, 150);
+      }
+
+      // Hitbox Overlay
+      if (hacks.showHitboxes) {
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#00ff00';
+        ctx.strokeRect(player.x, player.y, CUBE_SIZE, CUBE_SIZE);
+
+        ctx.strokeStyle = '#ffff00';
+        for (let plat of platforms) {
+          ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+        }
+
+        ctx.strokeStyle = '#ff0033';
+        for (let spike of spikes) {
+          const sy = spike.upsideDown ? spike.y : spike.y - 28;
+          ctx.strokeRect(spike.x - 12, sy, 24, 28);
+        }
+      }
+
+      ctx.restore();
+
+      // HUD Progress
+      const progress = Math.min(100, Math.max(0, Math.floor(((player.x - LEVEL_START_X) / (LEVEL_END_X - LEVEL_START_X)) * 100)));
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 20px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${progress}%`, canvas.width / 2, 30);
+
+      ctx.font = '11px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fillText('At_the_Speed_of_Light.mp3', canvas.width / 2, 48);
+
+      ctx.textAlign = 'left';
+
+      // FPS Counter
+      const now = Date.now();
+      if (hacks.showFps) {
+        frameCount++;
+        if (now - lastFpsUpdate >= 1000) {
+          fps = frameCount;
+          frameCount = 0;
+          lastFpsUpdate = now;
+        }
+
+        ctx.fillStyle = '#ff0033';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText(`FPS: ${fps}`, 10, 20);
+        ctx.fillText(`Attempt ${attempts}`, 10, 38);
+        if (hacks.noclip) {
+          ctx.fillStyle = '#ff00aa';
+          ctx.fillText('NOCLIP ACTIVE', 10, 56);
+        }
+      }
+
+      // Level Complete Overlay
+      if (player.completed) {
+        ctx.fillStyle = 'rgba(10, 0, 3, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.shadowColor = '#ff0033';
+        ctx.shadowBlur = 25;
+        ctx.fillStyle = '#ff0033';
+        ctx.font = 'bold 42px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('LEVEL COMPLETE!', canvas.width / 2, 140);
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '20px sans-serif';
+        ctx.fillText('GG! You conquered Bloodbath!', canvas.width / 2, 190);
+
+        ctx.fillStyle = '#ff8800';
+        ctx.font = '16px monospace';
+        ctx.fillText(`Total Attempts: ${attempts}`, canvas.width / 2, 230);
+
+        ctx.fillStyle = '#00ff66';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText('Click Screen or Press [R] to Replay', canvas.width / 2, 290);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    // Main Engine Loop
+    let stepAccumulator = 0;
+    function loop() {
+      stepAccumulator += hacks.speedhack;
+      while (stepAccumulator >= 1.0) {
+        updatePhysics();
+        stepAccumulator -= 1.0;
+      }
+
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
