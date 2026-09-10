@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internet Archive Random File Downloader</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .select-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn-main {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-main:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-main:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status-box {
+      min-height: 24px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .result-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: left;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+
+    .result-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      word-break: break-word;
+    }
+
+    .result-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-download {
+      background: var(--success);
+      color: white;
+      text-decoration: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn-download:hover {
+      opacity: 0.9;
+    }
+
+    .btn-link {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-link:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Archive Roulette</h1>
+    <p class="subtitle">Fetch and download a completely random file from the Internet Archive</p>
+
+    <div class="controls">
+      <div class="select-wrapper">
+        <label for="mediaType">Filter by Media Type:</label>
+        <select id="mediaType">
+          <option value="all">Any Media Type</option>
+          <option value="texts">Books & Texts</option>
+          <option value="audio">Audio & Music</option>
+          <option value="movies">Videos & Movies</option>
+          <option value="software">Software & Games</option>
+          <option value="image">Images</option>
+        </select>
+      </div>
+
+      <div>
+        <button id="fetchBtn" class="btn-main">
+          <span>🎲 Download Random File</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="status" class="status-box">Ready to explore millions of archived items.</div>
+
+    <div id="resultCard" class="result-card">
+      <span id="mediaBadge" class="badge">Text</span>
+      <div id="itemTitle" class="result-title">Item Title Here</div>
+      <div class="result-info">
+        <div><strong>File:</strong> <span id="fileName">-</span></div>
+        <div><strong>Format:</strong> <span id="fileFormat">-</span></div>
+        <div><strong>Size:</strong> <span id="fileSize">-</span></div>
+      </div>
+      <div class="action-buttons">
+        <a id="downloadBtn" class="btn-download" href="#" target="_blank" download>
+          📥 Download File Again
+        </a>
+        <a id="archiveBtn" class="btn-link" href="#" target="_blank">
+          🌐 View on Archive.org
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fetchBtn = document.getElementById('fetchBtn');
+    const statusBox = document.getElementById('status');
+    const resultCard = document.getElementById('resultCard');
+    const mediaTypeSelect = document.getElementById('mediaType');
+
+    const mediaBadge = document.getElementById('mediaBadge');
+    const itemTitle = document.getElementById('itemTitle');
+    const fileName = document.getElementById('fileName');
+    const fileFormat = document.getElementById('fileFormat');
+    const fileSize = document.getElementById('fileSize');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const archiveBtn = document.getElementById('archiveBtn');
+
+    // Utility: Format bytes into KB/MB/GB
+    function formatBytes(bytes) {
+      if (!bytes || isNaN(bytes) || bytes === 0) return 'Unknown size';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function getRandomArchiveFile(retryCount = 0) {
+      if (retryCount > 4) {
+        throw new Error('Failed to find a valid item after multiple attempts. Please try again!');
+      }
+
+      // Build media type query
+      const selectedType = mediaTypeSelect.value;
+      let queryFilter = '(texts OR audio OR movies OR software OR image)';
+      if (selectedType !== 'all') {
+        queryFilter = selectedType;
+      }
+
+      // 1. Get a random item from Advanced Search API
+      // Randomize page number between 1 and 100 to pull from thousands of items
+      const randomPage = Math.floor(Math.random() * 100) + 1;
+      const searchUrl = `https://archive.org/advancedsearch.php?q=mediatype:${queryFilter}&fl[]=identifier,title,mediatype&rows=25&page=${randomPage}&output=json`;
+
+      statusBox.textContent = 'Searching Internet Archive catalog...';
+      
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) throw new Error('Failed to query Internet Archive API');
+      
+      const searchData = await searchRes.json();
+      const docs = searchData.response?.docs;
+
+      if (!docs || docs.length === 0) {
+        // Try again if page returned no items
+        return getRandomArchiveFile(retryCount + 1);
+      }
+
+      // Pick a random item from returned search docs
+      const randomItem = docs[Math.floor(Math.random() * docs.length)];
+      const identifier = randomItem.identifier;
+
+      // 2. Fetch metadata for the selected item
+      statusBox.textContent = `Found item "${randomItem.title || identifier}". Reading files...`;
+      
+      const metaRes = await fetch(`https://archive.org/metadata/${identifier}`);
+      if (!metaRes.ok) return getRandomArchiveFile(retryCount + 1);
+
+      const metaData = await metaRes.json();
+      const files = metaData.files;
+
+      if (!files || files.length === 0) {
+        return getRandomArchiveFile(retryCount + 1);
+      }
+
+      // Filter out auto-generated system metadata files (xml, sqlite, thumbs, torrents)
+      const cleanFiles = files.filter(f => {
+        if (!f.name) return false;
+        const name = f.name.toLowerCase();
+        return !name.endsWith('_meta.xml') && 
+               !name.endsWith('_files.xml') && 
+               !name.endsWith('_meta.sqlite') && 
+               !name.endsWith('_archive.torrent') &&
+               !name.endsWith('_reviews.xml');
+      });
+
+      const targetFile = cleanFiles.length > 0 
+        ? cleanFiles[Math.floor(Math.random() * cleanFiles.length)]
+        : files[Math.floor(Math.random() * files.length)];
+
+      // 3. Build download URL safely
+      const safePath = targetFile.name.split('/').map(encodeURIComponent).join('/');
+      const downloadUrl = `https://archive.org/download/${identifier}/${safePath}`;
+
+      return {
+        identifier,
+        title: metaData.metadata?.title || randomItem.title || identifier,
+        mediaType: randomItem.mediatype || metaData.metadata?.mediatype || 'item',
+        fileName: targetFile.name,
+        format: targetFile.format || 'Unknown',
+        size: formatBytes(targetFile.size),
+        downloadUrl,
+        itemUrl: `https://archive.org/details/${identifier}`
+      };
+    }
+
+    fetchBtn.addEventListener('click', async () => {
+      // Set UI to loading state
+      fetchBtn.disabled = true;
+      fetchBtn.innerHTML = '<span class="spinner"></span> Finding random file...';
+      resultCard.style.display = 'none';
+
+      try {
+        const fileData = await getRandomArchiveFile();
+
+        // Update UI with file details
+        mediaBadge.textContent = fileData.mediaType;
+        itemTitle.textContent = fileData.title;
+        fileName.textContent = fileData.fileName;
+        fileFormat.textContent = fileData.format;
+        fileSize.textContent = fileData.size;
+
+        downloadBtn.href = fileData.downloadUrl;
+        archiveBtn.href = fileData.itemUrl;
+
+        resultCard.style.display = 'block';
+        statusBox.textContent = '🎉 File found! Download starting...';
+
+        // Trigger automatic file download
+        const a = document.createElement('a');
+        a.href = fileData.downloadUrl;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+      } catch (err) {
+        statusBox.textContent = `❌ Error: ${err.message}`;
+      } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.innerHTML = '<span>🎲 Download Random File</span>';
+      }
+    });
+  </script>
+</body>
+</html>
