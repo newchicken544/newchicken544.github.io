@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CALM SEARCHER // Mindful Web Navigation</title>
+  
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            duskBg: '#0f172a',
+            duskCard: 'rgba(30, 41, 59, 0.75)',
+            calmLavender: '#a78bfa',
+            calmEmerald: '#10b981',
+            calmSky: '#38bdf8',
+            calmRose: '#fb7185'
+          },
+          boxShadow: {
+            'calm-sky': '0 0 25px rgba(56, 189, 248, 0.25)',
+            'calm-lavender': '0 0 25px rgba(167, 139, 250, 0.25)',
+            'calm-emerald': '0 0 25px rgba(16, 185, 129, 0.25)',
+            'glass-soft': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;600;700&display=swap');
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    .font-outfit {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Soft Glassmorphism */
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-panel:hover {
+      border-color: rgba(167, 139, 250, 0.3);
+    }
+
+    .glass-input {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(167, 139, 250, 0.25);
+    }
+    .glass-input:focus-within {
+      border-color: #38bdf8;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Smooth Breathing Pulse Animation */
+    @keyframes breathExpand {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.6); opacity: 0.95; }
+    }
+    .breath-circle-anim {
+      animation: breathExpand 16s ease-in-out infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a78bfa;
+    }
+
+    /* Custom Range Sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: rgba(167, 139, 250, 0.2);
+      border-radius: 8px;
+      height: 6px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 10px #38bdf8;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between relative selection:bg-calmLavender selection:text-slate-900">
+
+  <!-- Ambient Wave & Glowing Particle Background Canvas -->
+  <canvas id="bg-canvas" class="fixed inset-0 w-full h-full -z-10 pointer-events-none opacity-80"></canvas>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-80 transition-transform duration-300 ease-in-out glass-panel px-5 py-3 rounded-2xl flex items-center gap-3 border-l-4 border-calmSky shadow-glass-soft hidden">
+    <i id="toast-icon" class="fa-solid fa-leaf text-calmSky text-lg"></i>
+    <div>
+      <h4 id="toast-title" class="font-outfit font-semibold text-sm text-white">Mindful Notice</h4>
+      <p id="toast-msg" class="text-xs text-slate-300">Action performed calmly.</p>
+    </div>
+  </div>
+
+  <div class="w-full max-w-5xl px-4 py-6 z-10 flex flex-col items-center gap-6">
+
+    <!-- Top Bar: Mindful Quotes Ticker & Breathing Modal Trigger -->
+    <div class="w-full glass-panel rounded-2xl px-4 py-3 flex items-center justify-between gap-4 border-slate-700/50 shadow-glass-soft">
+      <div class="flex items-center gap-2 text-calmEmerald font-outfit font-semibold text-xs sm:text-sm tracking-wide whitespace-nowrap">
+        <span class="inline-block w-2 h-2 rounded-full bg-calmEmerald animate-pulse"></span>
+        <i class="fa-solid fa-cloud-moon"></i> ZEN WISDOM:
+      </div>
+      <div class="overflow-hidden w-full">
+        <p id="quote-text" class="text-xs sm:text-sm font-medium text-slate-300 transition-opacity duration-300 italic font-outfit">
+          "In the stillness between queries, clarity emerges. Search with purpose."
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="next-quote-btn" title="Next Mindful Thought" class="text-slate-400 hover:text-calmSky transition-colors text-xs p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700/60">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+        <button id="toggle-breathing-btn" class="px-3 py-1.5 rounded-xl bg-calmEmerald/20 text-calmEmerald hover:bg-calmEmerald/30 border border-calmEmerald/30 font-outfit font-semibold text-xs transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-wind"></i> Breathe
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Title Header -->
+    <header class="text-center my-2 relative">
+      <div class="inline-block">
+        <h1 class="text-4xl sm:text-6xl font-extrabold font-outfit tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-calmSky via-calmLavender to-calmEmerald">
+          CALM SEARCHER
+        </h1>
+        <div class="h-0.5 w-3/4 mx-auto bg-gradient-to-r from-transparent via-calmLavender/50 to-transparent mt-2 rounded-full"></div>
+      </div>
+      <p class="text-xs sm:text-sm font-outfit font-medium text-slate-400 mt-2 tracking-widest uppercase">
+        <span class="text-calmSky">//</span> MINDFUL WEB &amp; INTERNET ARCHIVE NAVIGATION
+      </p>
+    </header>
+
+    <!-- AMBIENT SOUNDSCAPE SYNTHESIZER PANEL -->
+    <section class="w-full glass-panel rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-glass-soft">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/50 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-xl bg-calmLavender/10 text-calmLavender border border-calmLavender/20">
+            <i class="fa-solid fa-headphones text-lg"></i>
+          </div>
+          <div>
+            <h2 class="font-outfit font-bold text-base text-white tracking-wide">AMBIENT SOUNDSCAPE</h2>
+            <p class="text-xs text-slate-400">Procedural relaxation audio for calm focus while searching.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="audio-status-badge" class="text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+            SILENT
+          </span>
+          <button id="ambient-toggle-btn" class="px-5 py-2 rounded-xl font-outfit font-semibold text-xs sm:text-sm bg-gradient-to-r from-calmLavender to-calmSky text-slate-950 hover:brightness-110 transition-all shadow-calm-lavender flex items-center gap-2">
+            <i class="fa-solid fa-play"></i> PLAY SOUNDSCAPE
+          </button>
+        </div>
+      </div>
+
+      <!-- Sound Controls & Toggles -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+        <!-- Sound Layers Toggles -->
+        <button id="toggle-rain-btn" class="p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 text-slate-300 flex items-center justify-between transition-all">
+          <span class="flex items-center gap-2 font-outfit font-medium">
+            <i class="fa-solid fa-cloud-showers-heavy text-calmSky"></i> Gentle Rain
+          </span>
+          <span id="rain-status" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-mono">OFF</span>
+        </button>
+
+        <button id="toggle-pad-btn" class="p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 text-slate-300 flex items-center justify-between transition-all">
+          <span class="flex items-center gap-2 font-outfit font-medium">
+            <i class="fa-solid fa-wave-square text-calmLavender"></i> Zen Synth Drone
+          </span>
+          <span id="pad-status" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-mono">OFF</span>
+        </button>
+
+        <button id="toggle-tone-btn" class="p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 text-slate-300 flex items-center justify-between transition-all">
+          <span class="flex items-center gap-2 font-outfit font-medium">
+            <i class="fa-solid fa-om text-calmEmerald"></i> 432Hz Focus Tone
+          </span>
+          <span id="tone-status" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-mono">OFF</span>
+        </button>
+
+        <!-- Master Volume Control -->
+        <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 flex flex-col justify-center gap-1.5">
+          <div class="flex justify-between items-center font-outfit font-medium text-slate-300">
+            <span><i class="fa-solid fa-volume-high text-slate-400"></i> Volume</span>
+            <span id="vol-val" class="text-calmSky font-bold">70%</span>
+          </div>
+          <input type="range" id="vol-slider" min="0" max="100" value="70" class="w-full">
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCH CONSOLE SECTION -->
+    <section class="w-full glass-panel rounded-3xl p-5 sm:p-7 flex flex-col gap-5 shadow-glass-soft border-calmLavender/20">
+      
+      <!-- Engine Selector Tabs -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <span class="font-outfit font-medium text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-compass text-calmSky"></i> Select Engine:
+        </span>
+        <div id="engine-tabs" class="flex flex-wrap gap-1.5">
+          <button data-engine="duckduckgo" class="engine-tab active px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-calmSky text-slate-950 shadow-calm-sky">
+            DuckDuckGo
+          </button>
+          <button data-engine="archive" class="engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70">
+            <i class="fa-solid fa-box-archive text-amber-400 mr-1"></i> Internet Archive
+          </button>
+          <button data-engine="wayback" class="engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70">
+            <i class="fa-solid fa-clock-rotate-left text-calmSky mr-1"></i> Wayback Machine
+          </button>
+          <button data-engine="google" class="engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70">
+            Google
+          </button>
+          <button data-engine="brave" class="engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70">
+            Brave
+          </button>
+          <button data-engine="wikipedia" class="engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70">
+            Wikipedia
+          </button>
+          <button data-engine="youtube" class="engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70">
+            YouTube
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Glass Search Form -->
+      <form id="search-form" class="relative w-full">
+        <div class="relative flex items-center glass-input rounded-2xl transition-all">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 text-calmLavender text-lg pointer-events-none"></i>
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="Search mindfully or enter URL for Wayback Machine... (Press '/' to focus)" 
+            class="w-full pl-12 pr-32 py-4 rounded-2xl bg-transparent text-white placeholder-slate-400 font-outfit text-base sm:text-lg focus:outline-none"
+            autocomplete="off"
+            autofocus
+          >
+          <div class="absolute right-2 flex items-center gap-1.5">
+            <button 
+              type="button" 
+              id="clear-btn" 
+              class="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs transition-colors hidden"
+              title="Clear input"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button 
+              type="submit" 
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-calmSky to-calmEmerald hover:brightness-110 text-slate-950 font-outfit font-bold text-sm tracking-wide transition-all shadow-calm-emerald flex items-center gap-1.5"
+            >
+              <span>SEARCH</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Search Protocol Details -->
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1 font-outfit">
+        <span id="engine-desc">
+          <i class="fa-solid fa-shield-halved text-calmEmerald mr-1"></i> Selected Protocol: <strong class="text-slate-200" id="engine-name">DuckDuckGo Privacy Search</strong>
+        </span>
+        <span class="hidden sm:inline-block text-slate-500">Shortcut: <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]"> / </kbd> or <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">Ctrl+K</kbd></span>
+      </div>
+
+    </section>
+
+    <!-- DEDICATED INTERNET ARCHIVE & WAYBACK MACHINE TOOLKIT -->
+    <section class="w-full glass-panel rounded-2xl p-5 sm:p-6 flex flex-col gap-4 border-amber-500/20 shadow-glass-soft">
+      <div class="flex items-center justify-between border-b border-slate-700/50 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <i class="fa-solid fa-box-archive text-lg"></i>
+          </div>
+          <div>
+            <h3 class="font-outfit font-bold text-base text-white">INTERNET ARCHIVE &amp; WAYBACK SUITE</h3>
+            <p class="text-xs text-slate-400">Preserve digital history, view historical web snapshots, or save live pages instantly.</p>
+          </div>
+        </div>
+        <span class="hidden md:inline-block text-[10px] font-outfit font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+          Digital Preservation
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+        <!-- Target Webpage Input -->
+        <div class="md:col-span-7 flex flex-col gap-1.5">
+          <label class="text-xs font-outfit font-medium text-slate-300">
+            Target Website / Webpage URL:
+          </label>
+
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-globe absolute left-3 text-amber-400 text-sm"></i>
+            <input 
+              type="text" 
+              id="wayback-url-input" 
+              placeholder="e.g. wikipedia.org or https://example.com" 
+              class="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-slate-100 placeholder-slate-500 font-outfit text-xs sm:text-sm focus:outline-none focus:border-amber-400"
+            >
+          </div>
+        </div>
+
+        <!-- Wayback Action Buttons -->
+        <div class="md:col-span-5 flex flex-wrap sm:flex-nowrap items-end gap-2 pt-1 md:pt-0">
+          <button 
+            type="button" 
+            id="wb-view-btn" 
+            class="w-full sm:w-auto flex-1 px-3 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-outfit font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+            title="Browse snapshot timeline calendar"
+          >
+            <i class="fa-solid fa-clock-rotate-left"></i> Timeline
+          </button>
+          
+          <button 
+            type="button" 
+            id="wb-latest-btn" 
+            class="w-full sm:w-auto flex-1 px-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 font-outfit font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+            title="Open newest archived version"
+          >
+            <i class="fa-solid fa-eye"></i> Latest
+          </button>
+
+          <button 
+            type="button" 
+            id="wb-save-btn" 
+            class="w-full sm:w-auto flex-1 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-outfit font-bold text-xs hover:brightness-110 transition-all shadow-md flex items-center justify-center gap-1.5"
+            title="Archive this page immediately on Archive.org"
+          >
+            <i class="fa-solid fa-floppy-disk"></i> Save Page
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MINDFUL SPEED DIAL BOOKMARKS -->
+    <section class="w-full flex flex-col gap-3">
+      <div class="flex items-center justify-between px-1">
+        <h3 class="font-outfit font-semibold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-bookmark text-calmEmerald"></i> Mindful Resources &amp; Repositories
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
+        <a href="https://archive.org" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-amber-400 transition-all hover:-translate-y-1 group">
+          <i class="fa-solid fa-box-archive text-xl text-amber-400 group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">Archive.org</span>
+        </a>
+
+        <a href="https://openlibrary.org" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-calmSky transition-all hover:-translate-y-1 group">
+          <i class="fa-solid fa-book-open text-xl text-calmSky group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">Open Library</span>
+        </a>
+
+        <a href="https://en.wikipedia.org" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-calmLavender transition-all hover:-translate-y-1 group">
+          <i class="fa-brands fa-wikipedia-w text-xl text-calmLavender group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">Wikipedia</span>
+        </a>
+
+        <a href="https://gutenberg.org" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-calmEmerald transition-all hover:-translate-y-1 group">
+          <i class="fa-solid fa-scroll text-xl text-calmEmerald group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">Gutenberg</span>
+        </a>
+
+        <a href="https://jstor.org" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-calmRose transition-all hover:-translate-y-1 group">
+          <i class="fa-solid fa-graduation-cap text-xl text-calmRose group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">JSTOR</span>
+        </a>
+
+        <a href="https://github.com" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-white transition-all hover:-translate-y-1 group">
+          <i class="fa-brands fa-github text-xl text-slate-200 group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">GitHub</span>
+        </a>
+
+        <a href="https://rainwave.cc" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-calmSky transition-all hover:-translate-y-1 group">
+          <i class="fa-solid fa-radio text-xl text-calmSky group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">Rainwave</span>
+        </a>
+
+        <a href="https://apod.nasa.gov" target="_blank" class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-300 hover:text-indigo-400 transition-all hover:-translate-y-1 group">
+          <i class="fa-solid fa-user-astronaut text-xl text-indigo-400 group-hover:scale-110 transition-transform"></i>
+          <span class="font-outfit font-semibold text-xs">NASA APOD</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- BOX BREATHING EXERCISE OVERLAY MODAL -->
+    <div id="breathing-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden transition-opacity duration-300">
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 max-w-md w-full mx-4 flex flex-col items-center gap-6 border-calmEmerald/30 shadow-glass-soft relative">
+        
+        <button id="close-breathing-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="text-center">
+          <h3 class="font-outfit font-bold text-xl text-white">4-4-4-4 Box Breathing</h3>
+          <p class="text-xs text-slate-300 mt-1">Calm your mind before returning to focus.</p>
+        </div>
+
+        <!-- Animated Breathing Ring -->
+        <div class="relative w-48 h-48 flex items-center justify-center my-2">
+          <div id="breath-circle" class="absolute inset-0 rounded-full bg-gradient-to-br from-calmEmerald/30 via-calmLavender/20 to-calmSky/30 border-2 border-calmEmerald/50 breath-circle-anim"></div>
+          <div class="relative z-10 text-center flex flex-col items-center gap-1">
+            <span id="breath-phase" class="font-outfit font-bold text-lg text-calmEmerald">INHALE</span>
+            <span id="breath-timer" class="font-outfit text-3xl font-extrabold text-white">4</span>
+          </div>
+        </div>
+
+        <button id="breath-guide-toggle" class="w-full py-3 rounded-xl bg-gradient-to-r from-calmEmerald to-calmSky text-slate-950 font-outfit font-bold text-sm tracking-wide hover:brightness-110 transition-all">
+          PAUSE EXERCISE
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center text-xs text-slate-500 font-outfit pt-4 pb-6 flex flex-col items-center gap-2 border-t border-slate-800/60">
+      <div class="flex flex-wrap justify-center items-center gap-4 text-slate-400">
+        <span><kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300"> / </kbd> Focus Search</span>
+        <span><kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">ESC</kbd> Clear/Dismiss</span>
+      </div>
+      <p class="mt-1 text-[11px] text-slate-600">
+        CALM SEARCHER // MINDFUL WEB NAVIGATION &copy; 2026 // POWERED BY WEB AUDIO API &amp; INTERNET ARCHIVE
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    const appState = {
+      activeEngine: 'duckduckgo',
+      audioCtx: null,
+      isPlayingAudio: false,
+      rainEnabled: false,
+      padEnabled: false,
+      toneEnabled: false,
+      volume: 0.7,
+      
+      // Audio Nodes
+      rainNode: null,
+      rainGain: null,
+      padOscs: [],
+      padGain: null,
+      toneOsc: null,
+      toneGain: null,
+      masterGain: null,
+
+      // Box Breathing Timer
+      breathingActive: false,
+      breathInterval: null,
+      breathStep: 0
+    };
+
+    // Zen Quotes Database
+    const zenQuotes = [
+      '"In the stillness between queries, clarity emerges. Search with purpose."',
+      '"The web is vast, but your attention is finite. Seek what truly matters."',
+      '"Data is noise until filtered by a calm and thoughtful mind."',
+      '"Preserve the past through archiving; navigate the present with peace."',
+      '"Breathe deeply before searching. A clear mind asks better questions."',
+      '"Knowledge flows like water. Be receptive and unhurried."'
+    ];
+    let quoteIdx = 0;
+
+    // Toast Feedback
+    function showToast(title, message, iconClass = 'fa-solid fa-leaf', isError = false) {
+      const toast = document.getElementById('toast');
+      const tTitle = document.getElementById('toast-title');
+      const tMsg = document.getElementById('toast-msg');
+      const tIcon = document.getElementById('toast-icon');
+
+      tTitle.textContent = title;
+      tMsg.textContent = message;
+      tIcon.className = iconClass + (isError ? ' text-calmRose' : ' text-calmSky');
+
+      toast.classList.remove('hidden', 'translate-x-80');
+      toast.classList.add('translate-x-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-x-80');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 3500);
+    }
+
+    const engineConfig = {
+      duckduckgo: {
+        name: 'DuckDuckGo Privacy Search',
+        url: 'https://duckduckgo.com/?q=',
+        desc: 'Privacy-focused search engine with no user tracking.'
+      },
+      archive: {
+        name: 'Internet Archive (Archive.org)',
+        url: 'https://archive.org/search.php?query=',
+        desc: 'Search millions of free digital books, films, music, and software.'
+      },
+      wayback: {
+        name: 'Wayback Machine URL Search',
+        url: 'https://web.archive.org/web/*/',
+        desc: 'Lookup historical cached snapshots of any web page.'
+      },
+      google: {
+        name: 'Google Search Engine',
+        url: 'https://www.google.com/search?q=',
+        desc: 'Standard global Google search.'
+      },
+      brave: {
+        name: 'Brave Search Protocol',
+        url: 'https://search.brave.com/search?q=',
+        desc: 'Private, independent web index.'
+      },
+      wikipedia: {
+        name: 'Wikipedia Knowledge Base',
+        url: 'https://en.wikipedia.org/wiki/Special:Search?search=',
+        desc: 'Free collaborative encyclopedia.'
+      },
+      youtube: {
+        name: 'YouTube Video Search',
+        url: 'https://www.youtube.com/results?search_query=',
+        desc: 'Query video lectures, music, and documentaries.'
+      }
+    };
+
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-btn');
+    const engineTabs = document.querySelectorAll('.engine-tab');
+    const engineNameEl = document.getElementById('engine-name');
+
+    engineTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        engineTabs.forEach(t => {
+          t.className = 'engine-tab px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/70';
+        });
+
+        tab.className = 'engine-tab active px-3.5 py-1.5 rounded-xl text-xs font-outfit font-semibold transition-all bg-calmSky text-slate-950 shadow-calm-sky';
+        
+        appState.activeEngine = tab.dataset.engine;
+        const config = engineConfig[appState.activeEngine];
+        engineNameEl.textContent = config.name;
+
+        showToast('Engine Selected', `Switched protocol to ${config.name}`);
+      });
+    });
+
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = searchInput.value.trim();
+      if (!query) {
+        showToast('Input Required', 'Please enter a search query or website URL.', 'fa-solid fa-circle-exclamation', true);
+        return;
+      }
+
+      const config = engineConfig[appState.activeEngine];
+      let finalUrl = config.url + encodeURIComponent(query);
+
+      if (appState.activeEngine === 'wayback') {
+        let cleanQuery = query.replace(/^https?:\/\//i, '');
+        finalUrl = `https://web.archive.org/web/*/${cleanQuery}`;
+      }
+
+      window.open(finalUrl, '_blank');
+      showToast('Opening Query', `Navigating using ${config.name}...`, 'fa-solid fa-arrow-up-right-from-square');
+    });
+
+    searchInput.addEventListener('input', () => {
+      if (searchInput.value.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      searchInput.focus();
+    });
+
+    const waybackUrlInput = document.getElementById('wayback-url-input');
+    const wbViewBtn = document.getElementById('wb-view-btn');
+    const wbLatestBtn = document.getElementById('wb-latest-btn');
+    const wbSaveBtn = document.getElementById('wb-save-btn');
+
+    function getWaybackTarget() {
+      let rawUrl = waybackUrlInput.value.trim() || searchInput.value.trim();
+      if (!rawUrl) {
+        showToast('URL Needed', 'Enter a website address into the Archive input field.', 'fa-solid fa-globe', true);
+        return null;
+      }
+      return rawUrl.replace(/^https?:\/\//i, '');
+    }
+
+    wbViewBtn.addEventListener('click', () => {
+      const target = getWaybackTarget();
+      if (target) {
+        window.open(`https://web.archive.org/web/*/${target}`, '_blank');
+        showToast('Wayback History', `Opening snapshot calendar for ${target}`);
+      }
+    });
+
+    wbLatestBtn.addEventListener('click', () => {
+      const target = getWaybackTarget();
+      if (target) {
+        window.open(`https://web.archive.org/web/${target}`, '_blank');
+        showToast('Latest Snapshot', `Fetching newest cached version of ${target}`);
+      }
+    });
+
+    wbSaveBtn.addEventListener('click', () => {
+      const target = getWaybackTarget();
+      if (target) {
+        window.open(`https://web.archive.org/save/${target}`, '_blank');
+        showToast('Archiving Live Page', `Submitting ${target} to Archive.org for permanent save!`, 'fa-solid fa-floppy-disk');
+      }
+    });
+
+    const ambientToggleBtn = document.getElementById('ambient-toggle-btn');
+    const audioStatusBadge = document.getElementById('audio-status-badge');
+    const volSlider = document.getElementById('vol-slider');
+    const volVal = document.getElementById('vol-val');
+
+    const toggleRainBtn = document.getElementById('toggle-rain-btn');
+    const togglePadBtn = document.getElementById('toggle-pad-btn');
+    const toggleToneBtn = document.getElementById('toggle-tone-btn');
+
+    const rainStatus = document.getElementById('rain-status');
+    const padStatus = document.getElementById('pad-status');
+    const toneStatus = document.getElementById('tone-status');
+
+    function initAudioContext() {
+      if (!appState.audioCtx) {
+        appState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Master Gain
+        appState.masterGain = appState.audioCtx.createGain();
+        appState.masterGain.gain.setValueAtTime(appState.volume, appState.audioCtx.currentTime);
+        appState.masterGain.connect(appState.audioCtx.destination);
+      }
+      if (appState.audioCtx.state === 'suspended') {
+        appState.audioCtx.resume();
+      }
+    }
+
+    // 1. Procedural Pink Noise Gentle Rain Synthesizer
+    function createRainSound() {
+      const ctx = appState.audioCtx;
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = buffer.getChannelData(0);
+
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        let white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+        output[i] *= 0.05;
+        b6 = white * 0.115926;
+      }
+
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = buffer;
+      whiteNoise.loop = true;
+
+      // Filter for rain softness
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1000;
+
+      appState.rainGain = ctx.createGain();
+      appState.rainGain.gain.setValueAtTime(0.25, ctx.currentTime);
+
+      whiteNoise.connect(filter);
+      filter.connect(appState.rainGain);
+      appState.rainGain.connect(appState.masterGain);
+
+      whiteNoise.start();
+      appState.rainNode = whiteNoise;
+    }
+
+    // 2. Zen Ambient Chord Synth Drone
+    function createPadDrone() {
+      const ctx = appState.audioCtx;
+      // Soft C Major 7th / Pentatonic Frequencies (Hz)
+      const freqs = [130.81, 164.81, 196.00, 246.94, 293.66];
+      appState.padOscs = [];
+
+      appState.padGain = ctx.createGain();
+      appState.padGain.gain.setValueAtTime(0.18, ctx.currentTime);
+
+      freqs.forEach(freq => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+        // Gentle Detuning LFO
+        const lfo = ctx.createOscillator();
+        lfo.frequency.setValueAtTime(0.15, ctx.currentTime);
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.setValueAtTime(1.5, ctx.currentTime);
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start();
+
+        osc.connect(appState.padGain);
+        osc.start();
+        appState.padOscs.push(osc);
+      });
+
+      appState.padGain.connect(appState.masterGain);
+    }
+
+    // 3. Solfeggio 432Hz Focus Tone
+    function create432HzTone() {
+      const ctx = appState.audioCtx;
+      appState.toneOsc = ctx.createOscillator();
+      appState.toneOsc.type = 'sine';
+      appState.toneOsc.frequency.setValueAtTime(432, ctx.currentTime);
+
+      appState.toneGain = ctx.createGain();
+      appState.toneGain.gain.setValueAtTime(0.12, ctx.currentTime);
+
+      appState.toneOsc.connect(appState.toneGain);
+      appState.toneGain.connect(appState.masterGain);
+      appState.toneOsc.start();
+    }
+
+    ambientToggleBtn.addEventListener('click', () => {
+      initAudioContext();
+
+      if (!appState.isPlayingAudio) {
+        appState.isPlayingAudio = true;
+        
+        // Turn on default rain & synth pad if all were off
+        if (!appState.rainEnabled && !appState.padEnabled && !appState.toneEnabled) {
+          appState.rainEnabled = true;
+          appState.padEnabled = true;
+        }
+
+        updateAudioLayers();
+
+        ambientToggleBtn.innerHTML = '<i class="fa-solid fa-pause"></i> PAUSE SOUNDSCAPE';
+        ambientToggleBtn.classList.replace('from-calmLavender', 'from-calmRose');
+        audioStatusBadge.textContent = 'PLAYING';
+        audioStatusBadge.className = 'text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-calmEmerald/20 text-calmEmerald border border-calmEmerald/40 animate-pulse';
+
+        showToast('Soundscape Active', 'Procedural relaxation audio started.');
+      } else {
+        appState.isPlayingAudio = false;
+        stopAllAudioNodes();
+
+        ambientToggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> PLAY SOUNDSCAPE';
+        ambientToggleBtn.classList.replace('from-calmRose', 'from-calmLavender');
+        audioStatusBadge.textContent = 'SILENT';
+        audioStatusBadge.className = 'text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+
+        showToast('Soundscape Muted', 'Audio placed on standby.');
+      }
+    });
+
+    function stopAllAudioNodes() {
+      if (appState.rainNode) {
+        appState.rainNode.stop();
+        appState.rainNode = null;
+      }
+      if (appState.padOscs.length > 0) {
+        appState.padOscs.forEach(o => o.stop());
+        appState.padOscs = [];
+      }
+      if (appState.toneOsc) {
+        appState.toneOsc.stop();
+        appState.toneOsc = null;
+      }
+    }
+
+    function updateAudioLayers() {
+      if (!appState.isPlayingAudio) return;
+
+      // Handle Rain Layer
+      if (appState.rainEnabled && !appState.rainNode) {
+        createRainSound();
+        rainStatus.textContent = 'ON';
+        rainStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-calmSky/20 text-calmSky font-mono font-bold';
+      } else if (!appState.rainEnabled && appState.rainNode) {
+        appState.rainNode.stop();
+        appState.rainNode = null;
+        rainStatus.textContent = 'OFF';
+        rainStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-mono';
+      } else if (appState.rainEnabled) {
+        rainStatus.textContent = 'ON';
+        rainStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-calmSky/20 text-calmSky font-mono font-bold';
+      }
+
+      // Handle Pad Layer
+      if (appState.padEnabled && appState.padOscs.length === 0) {
+        createPadDrone();
+        padStatus.textContent = 'ON';
+        padStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-calmLavender/20 text-calmLavender font-mono font-bold';
+      } else if (!appState.padEnabled && appState.padOscs.length > 0) {
+        appState.padOscs.forEach(o => o.stop());
+        appState.padOscs = [];
+        padStatus.textContent = 'OFF';
+        padStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-mono';
+      } else if (appState.padEnabled) {
+        padStatus.textContent = 'ON';
+        padStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-calmLavender/20 text-calmLavender font-mono font-bold';
+      }
+
+      // Handle 432Hz Tone Layer
+      if (appState.toneEnabled && !appState.toneOsc) {
+        create432HzTone();
+        toneStatus.textContent = 'ON';
+        toneStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-calmEmerald/20 text-calmEmerald font-mono font-bold';
+      } else if (!appState.toneEnabled && appState.toneOsc) {
+        appState.toneOsc.stop();
+        appState.toneOsc = null;
+        toneStatus.textContent = 'OFF';
+        toneStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-mono';
+      } else if (appState.toneEnabled) {
+        toneStatus.textContent = 'ON';
+        toneStatus.className = 'text-[10px] px-2 py-0.5 rounded bg-calmEmerald/20 text-calmEmerald font-mono font-bold';
+      }
+    }
+
+    toggleRainBtn.addEventListener('click', () => {
+      appState.rainEnabled = !appState.rainEnabled;
+      if (!appState.isPlayingAudio && appState.rainEnabled) ambientToggleBtn.click();
+      else updateAudioLayers();
+    });
+
+    togglePadBtn.addEventListener('click', () => {
+      appState.padEnabled = !appState.padEnabled;
+      if (!appState.isPlayingAudio && appState.padEnabled) ambientToggleBtn.click();
+      else updateAudioLayers();
+    });
+
+    toggleToneBtn.addEventListener('click', () => {
+      appState.toneEnabled = !appState.toneEnabled;
+      if (!appState.isPlayingAudio && appState.toneEnabled) ambientToggleBtn.click();
+      else updateAudioLayers();
+    });
+
+    volSlider.addEventListener('input', (e) => {
+      appState.volume = parseInt(e.target.value) / 100;
+      volVal.textContent = `${e.target.value}%`;
+      if (appState.masterGain) {
+        appState.masterGain.gain.setValueAtTime(appState.volume, appState.audioCtx.currentTime);
+      }
+    });
+
+    const breathingModal = document.getElementById('breathing-modal');
+    const toggleBreathingBtn = document.getElementById('toggle-breathing-btn');
+    const closeBreathingBtn = document.getElementById('close-breathing-btn');
+    const breathPhase = document.getElementById('breath-phase');
+    const breathTimer = document.getElementById('breath-timer');
+    const breathGuideToggle = document.getElementById('breath-guide-toggle');
+
+    const breathPhases = [
+      { name: 'INHALE', color: 'text-calmEmerald', seconds: 4 },
+      { name: 'HOLD', color: 'text-calmSky', seconds: 4 },
+      { name: 'EXHALE', color: 'text-calmLavender', seconds: 4 },
+      { name: 'HOLD', color: 'text-slate-300', seconds: 4 }
+    ];
+
+    function startBreathingCycle() {
+      appState.breathingActive = true;
+      let phaseIdx = 0;
+      let countdown = 4;
+
+      breathPhase.textContent = breathPhases[0].name;
+      breathPhase.className = `font-outfit font-bold text-lg ${breathPhases[0].color}`;
+      breathTimer.textContent = countdown;
+
+      if (appState.breathInterval) clearInterval(appState.breathInterval);
+
+      appState.breathInterval = setInterval(() => {
+        countdown--;
+        if (countdown <= 0) {
+          phaseIdx = (phaseIdx + 1) % 4;
+          countdown = 4;
+          breathPhase.textContent = breathPhases[phaseIdx].name;
+          breathPhase.className = `font-outfit font-bold text-lg ${breathPhases[phaseIdx].color}`;
+        }
+        breathTimer.textContent = countdown;
+      }, 1000);
+    }
+
+    toggleBreathingBtn.addEventListener('click', () => {
+      breathingModal.classList.remove('hidden');
+      startBreathingCycle();
+    });
+
+    closeBreathingBtn.addEventListener('click', () => {
+      breathingModal.classList.add('hidden');
+      if (appState.breathInterval) clearInterval(appState.breathInterval);
+    });
+
+    breathGuideToggle.addEventListener('click', () => {
+      if (appState.breathingActive) {
+        appState.breathingActive = false;
+        clearInterval(appState.breathInterval);
+        breathGuideToggle.textContent = 'RESUME EXERCISE';
+      } else {
+        startBreathingCycle();
+        breathGuideToggle.textContent = 'PAUSE EXERCISE';
+      }
+    });
+
+    const quoteText = document.getElementById('quote-text');
+    const nextQuoteBtn = document.getElementById('next-quote-btn');
+
+    function rotateQuote() {
+      quoteText.style.opacity = '0';
+      setTimeout(() => {
+        quoteIdx = (quoteIdx + 1) % zenQuotes.length;
+        quoteText.textContent = zenQuotes[quoteIdx];
+        quoteText.style.opacity = '1';
+      }, 300);
+    }
+
+    nextQuoteBtn.addEventListener('click', rotateQuote);
+    setInterval(rotateQuote, 14000);
+
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let waveStep = 0;
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Ambient floating glowing light orbs
+    const orbs = Array.from({ length: 12 }, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      radius: Math.random() * 180 + 100,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      color: ['rgba(56, 189, 248, 0.08)', 'rgba(167, 139, 250, 0.08)', 'rgba(16, 185, 129, 0.06)'][Math.floor(Math.random() * 3)]
+    }));
+
+    function renderCanvas() {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+
+      // Render Soft Floating Light Orbs
+      orbs.forEach(orb => {
+        orb.x += orb.vx;
+        orb.y += orb.vy;
+
+        if (orb.x < -orb.radius) orb.x = width + orb.radius;
+        if (orb.x > width + orb.radius) orb.x = -orb.radius;
+        if (orb.y < -orb.radius) orb.y = height + orb.radius;
+        if (orb.y > height + orb.radius) orb.y = -orb.radius;
+
+        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
+        grad.addColorStop(0, orb.color);
+        grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Render Gentle Harmonic Liquid Sine Waves
+      waveStep += appState.isPlayingAudio ? 0.015 : 0.006;
+      
+      const waveColors = ['rgba(56, 189, 248, 0.12)', 'rgba(167, 139, 250, 0.10)', 'rgba(16, 185, 129, 0.08)'];
+      
+      waveColors.forEach((color, i) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+
+        for (let x = 0; x <= width; x += 20) {
+          const y = Math.sin(x * 0.003 + waveStep + (i * 1.5)) * 35 +
+                    Math.cos(x * 0.001 + waveStep * 0.8) * 20 + (height * 0.72) + (i * 25);
+          ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      requestAnimationFrame(renderCanvas);
+    }
+    renderCanvas();
+
+    document.addEventListener('keydown', (e) => {
+      // Focus Search Bar
+      if ((e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+
+      // Escape key to blur search or close modal
+      if (e.key === 'Escape') {
+        if (!breathingModal.classList.contains('hidden')) {
+          closeBreathingBtn.click();
+        } else if (document.activeElement === searchInput) {
+          searchInput.blur();
+        }
+      }
+    });
+
+    window.addEventListener('load', () => {
+      showToast('Calm Searcher Ready', 'Search mindfully or activate the ambient soundscape.', 'fa-solid fa-cloud-moon');
+    });
+  </script>
+</body>
+</html>
+```
