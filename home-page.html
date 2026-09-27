@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Workstation & Windows XP Desktop - Bloodbath & Geometry Dash</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Tahoma', sans-serif;
+            background-color: #08090c;
+            color: #111;
+        }
+
+        /* 3D WebGL Canvas Container */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Viewport Navigation Overlay Controls */
+        #viewport-controls {
+            position: absolute;
+            top: 18px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 12px;
+        }
+
+        .view-btn {
+            background: rgba(15, 23, 42, 0.88);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-btn:hover {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+        }
+
+        /* Camera Zoom Helper Floating Hint */
+        #camera-hint {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.92);
+            color: #f8fafc;
+            padding: 10px 22px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 90;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        /* 2D Fullscreen Windows XP Desktop Overlay */
+        #xp-desktop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        #xp-desktop-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* CRT Screen Texture Effects */
+        .crt-scanlines {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.18) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 3px, 5px 100%;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.35;
+        }
+
+        .crt-vignette {
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.7);
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        /* Authentic Windows XP Bliss Wallpaper */
+        .bliss-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, #1062d1 0%, #317be6 35%, #7cb0f8 55%, #a1cbfc 70%), 
+                        radial-gradient(ellipse at 50% 115%, #66ba3a 0%, #3e8d1e 45%, #2a5b14 100%);
+            background-blend-mode: normal;
+        }
+
+        .bliss-hills-svg {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            height: 52%;
+            pointer-events: none;
+        }
+
+        /* Authentic Windows XP Window Frame */
+        .xp-window {
+            position: absolute;
+            background: #ece9d8;
+            border: 3px solid #0055ea;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            box-shadow: 3px 3px 18px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            min-width: 340px;
+            min-height: 240px;
+            z-index: 20;
+        }
+
+        .xp-title-bar {
+            background: linear-gradient(to bottom, #0058ee 0%, #3a93ff 8%, #0055ea 25%, #0045cc 85%, #0033aa 100%);
+            color: #ffffff;
+            padding: 4px 8px;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            cursor: move;
+            text-shadow: 1px 1px 1px #002277;
+        }
+
+        .xp-window-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .xp-win-btn {
+            width: 21px;
+            height: 21px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: inset 1px 1px 1px rgba(255,255,255,0.8), 1px 1px 2px rgba(0,0,0,0.5);
+            border: 1px solid #ffffff;
+        }
+
+        .xp-btn-close {
+            background: linear-gradient(to bottom, #f39e88 0%, #e14013 40%, #c41800 100%);
+            color: white;
+        }
+        .xp-btn-close:hover { background: #f03000; }
+
+        .xp-btn-min, .xp-btn-max {
+            background: linear-gradient(to bottom, #3c93e7 0%, #0055ea 50%, #003ab7 100%);
+            color: white;
+        }
+
+        .xp-menu-bar {
+            background: #ece9d8;
+            padding: 2px 6px;
+            border-bottom: 1px solid #d0ccc0;
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: #000;
+        }
+
+        .xp-menu-item {
+            cursor: pointer;
+            padding: 1px 6px;
+            border-radius: 2px;
+        }
+        .xp-menu-item:hover {
+            background: #316ac5;
+            color: white;
+        }
+
+        /* Taskbar Styles */
+        .xp-taskbar {
+            height: 32px;
+            background: linear-gradient(to bottom, #245edb 0%, #3f8cf3 9%, #245edb 18%, #1941a5 92%, #19318b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 500;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .xp-start-btn {
+            background: linear-gradient(to bottom, #388e3c 0%, #62b132 15%, #3d8d1e 85%, #1b530c 100%);
+            height: 100%;
+            padding: 0 16px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            color: white;
+            font-size: 15px;
+            font-style: italic;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.4), inset 1px 1px 1px rgba(255,255,255,0.6);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .xp-start-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .xp-system-tray {
+            background: linear-gradient(to bottom, #0c8fea 0%, #0f73c8 20%, #095bc3 100%);
+            height: 100%;
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-size: 11px;
+            border-left: 1px solid #0f418c;
+            box-shadow: inset 1px 0 2px rgba(0,0,0,0.3);
+        }
+
+        /* Start Menu Popup */
+        .xp-start-menu {
+            position: absolute;
+            bottom: 32px;
+            left: 0;
+            width: 380px;
+            background: #ffffff;
+            border-top-right-radius: 8px;
+            border-top-left-radius: 8px;
+            box-shadow: 6px 6px 24px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 600;
+            border: 2px solid #0055ea;
+            overflow: hidden;
+        }
+
+        .xp-start-header {
+            background: linear-gradient(to bottom, #0058ee 0%, #3a93ff 10%, #0055ea 100%);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: inset 0 -2px 3px rgba(0,0,0,0.2);
+        }
+
+        .xp-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 5px;
+            border: 2px solid #ffffff;
+            background: #d0e0f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0055ea;
+            font-size: 24px;
+        }
+
+        .xp-start-body {
+            display: flex;
+            border-top: 1px solid #e1e1e1;
+            background: #ffffff;
+        }
+
+        .xp-start-left {
+            width: 50%;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .xp-start-right {
+            width: 50%;
+            background: #d3e5fa;
+            border-left: 1px solid #95bdee;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+        }
+
+        .xp-start-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #222;
+        }
+
+        .xp-start-item:hover {
+            background: #316ac5;
+            color: white;
+        }
+
+        .xp-start-footer {
+            background: linear-gradient(to bottom, #4282d6 0%, #2961b7 100%);
+            padding: 8px 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid #1f4f9c;
+        }
+
+        .xp-footer-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+        .xp-footer-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* Desktop Shortcuts */
+        .desktop-shortcuts {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            z-index: 5;
+        }
+
+        .desktop-icon {
+            width: 84px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            padding: 6px 4px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+
+        .desktop-icon:hover {
+            background: rgba(49, 106, 197, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .desktop-icon.selected {
+            background: rgba(49, 106, 197, 0.65);
+            border: 1px dotted #ffffff;
+        }
+
+        .desktop-icon-img {
+            width: 38px;
+            height: 38px;
+            margin-bottom: 4px;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.6));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .desktop-icon span {
+            color: white;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        /* App Toolbar Styling */
+        .app-toolbar {
+            background: linear-gradient(180deg, #1c2333 0%, #0d111a 100%);
+            border-bottom: 1px solid #2d3748;
+            color: #e2e8f0;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .bloodbath-header-banner {
+            background: linear-gradient(90deg, #2b0000 0%, #660000 50%, #2b0000 100%);
+            border-bottom: 2px solid #ff3333;
+            color: #ff9999;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+        }
+
+        .red-demon-badge {
+            background: linear-gradient(135deg, #cc0000, #550000);
+            color: #ffffff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #ff4d4d;
+            box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Canvas Viewport Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Top Viewport Control Overlay -->
+    <div id="viewport-controls">
+        <button id="btn-zoom-toggle" class="view-btn" onclick="toggleZoom()">
+            <i class="fa-solid fa-desktop"></i>
+            <span id="zoom-btn-text">Enter XP Desktop</span>
+        </button>
+        <button id="btn-audio-toggle" class="view-btn" onclick="toggleAudio()">
+            <i id="audio-icon" class="fa-solid fa-volume-high"></i>
+            <span>Sound</span>
+        </button>
+    </div>
+
+    <!-- Bottom Camera Navigation Hint -->
+    <div id="camera-hint">
+        <span class="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+        <span>Click CRT Screen or Press <b>SPACE</b> to zoom into Windows XP</span>
+    </div>
+
+    <!-- Windows XP Fullscreen Desktop Screen Overlay -->
+    <div id="xp-desktop-overlay">
+        <div class="crt-scanlines"></div>
+        <div class="crt-vignette"></div>
+
+        <!-- Classic Bliss Background Wallpaper -->
+        <div class="bliss-bg">
+            <svg class="bliss-hills-svg" preserveAspectRatio="none" viewBox="0 0 1440 320">
+                <path fill="#4e9927" fill-opacity="1" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,165.3C1200,160,1320,192,1380,208L1440,224L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
+                <path fill="#2e6212" fill-opacity="0.85" d="M0,256L80,245.3C160,235,320,213,480,224C640,235,800,277,960,272C1120,267,1280,213,1360,186.7L1440,160L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+            </svg>
+        </div>
+
+        <!-- Desktop Application Shortcuts -->
+        <div class="desktop-shortcuts">
+            <!-- Bloodbath Shortcut -->
+            <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('bloodbath')">
+                <div class="desktop-icon-img">
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+                        <rect x="5" y="5" width="90" height="90" rx="15" fill="#1a0000" stroke="#ff3333" stroke-width="6"/>
+                        <polygon points="50,15 85,80 15,80" fill="#cc0000" />
+                        <circle cx="38" cy="50" r="7" fill="#ffffff"/>
+                        <circle cx="62" cy="50" r="7" fill="#ffffff"/>
+                        <circle cx="38" cy="50" r="3" fill="#000000"/>
+                        <circle cx="62" cy="50" r="3" fill="#000000"/>
+                        <polygon points="50,60 35,72 65,72" fill="#ff0000" />
+                    </svg>
+                </div>
+                <span>Bloodbath</span>
+            </div>
+
+            <!-- Geometry Dash Tidal Wave Icon -->
+            <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('gd')">
+                <div class="desktop-icon-img">
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+                        <rect x="5" y="5" width="90" height="90" rx="15" fill="#00f0ff" stroke="#ffffff" stroke-width="6"/>
+                        <rect x="20" y="20" width="60" height="60" fill="#ff0055" />
+                        <rect x="35" y="35" width="30" height="30" fill="#ffee00" />
+                        <circle cx="35" cy="35" r="5" fill="#000"/>
+                        <circle cx="65" cy="35" r="5" fill="#000"/>
+                    </svg>
+                </div>
+                <span>Tidal Wave</span>
+            </div>
+
+            <!-- My Computer -->
+            <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('mycomputer')">
+                <div class="desktop-icon-img">
+                    <i class="fa-solid fa-desktop text-3xl text-blue-400"></i>
+                </div>
+                <span>My Computer</span>
+            </div>
+
+            <!-- Notepad -->
+            <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('notepad')">
+                <div class="desktop-icon-img">
+                    <i class="fa-solid fa-file-lines text-3xl text-amber-100"></i>
+                </div>
+                <span>Notepad</span>
+            </div>
+
+            <!-- Internet Explorer -->
+            <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('browser')">
+                <div class="desktop-icon-img">
+                    <i class="fa-brands fa-internet-explorer text-3xl text-blue-500"></i>
+                </div>
+                <span>Internet Explorer</span>
+            </div>
+
+            <!-- Recycle Bin -->
+            <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('recycle')">
+                <div class="desktop-icon-img">
+                    <i class="fa-solid fa-trash-can text-3xl text-slate-300"></i>
+                </div>
+                <span>Recycle Bin</span>
+            </div>
+        </div>
+
+        <!-- Container for Active Windows -->
+        <div id="windows-container" class="relative w-full h-full pointer-events-none"></div>
+
+        <!-- Windows XP Taskbar -->
+        <div class="xp-taskbar">
+            <div class="xp-start-btn" onclick="toggleStartMenu(event)">
+                <i class="fa-brands fa-windows text-xl text-white"></i>
+                <span>start</span>
+            </div>
+
+            <div id="taskbar-tabs" class="flex items-center gap-1 px-2 flex-grow overflow-x-auto"></div>
+
+            <div class="xp-system-tray">
+                <i class="fa-solid fa-shield-halved text-amber-400" title="Windows Security Center"></i>
+                <i class="fa-solid fa-volume-high text-white" title="Volume"></i>
+                <span id="xp-clock">12:00 PM</span>
+            </div>
+        </div>
+
+        <!-- Start Menu -->
+        <div id="xp-start-menu" class="xp-start-menu">
+            <div class="xp-start-header">
+                <div class="xp-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <span>Administrator</span>
+            </div>
+            <div class="xp-start-body">
+                <div class="xp-start-left">
+                    <div class="xp-start-item" onclick="openApp('bloodbath'); toggleStartMenu();">
+                        <i class="fa-solid fa-skull text-red-600 text-lg"></i>
+                        <div>
+                            <div class="font-bold">Bloodbath</div>
+                            <div class="text-xs text-gray-500">Geometry Dash Extreme</div>
+                        </div>
+                    </div>
+                    <div class="xp-start-item" onclick="openApp('gd'); toggleStartMenu();">
+                        <i class="fa-solid fa-gamepad text-cyan-500 text-lg"></i>
+                        <div>
+                            <div class="font-bold">Tidal Wave</div>
+                            <div class="text-xs text-gray-500">Demon Video Player</div>
+                        </div>
+                    </div>
+                    <div class="xp-start-item" onclick="openApp('browser'); toggleStartMenu();">
+                        <i class="fa-brands fa-internet-explorer text-blue-500 text-lg"></i>
+                        <div>
+                            <div class="font-bold">Internet Explorer</div>
+                            <div class="text-xs text-gray-500">Web Browser</div>
+                        </div>
+                    </div>
+                    <div class="xp-start-item" onclick="openApp('notepad'); toggleStartMenu();">
+                        <i class="fa-solid fa-file-lines text-amber-600 text-lg"></i>
+                        <div>
+                            <div class="font-bold">Notepad</div>
+                            <div class="text-xs text-gray-500">Text Editor</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="xp-start-right">
+                    <div class="xp-start-item font-bold" onclick="openApp('mycomputer'); toggleStartMenu();">My Computer</div>
+                    <div class="xp-start-item font-bold" onclick="openApp('recycle'); toggleStartMenu();">Recycle Bin</div>
+                    <div class="xp-start-item" onclick="playSound('click')">Control Panel</div>
+                    <div class="xp-start-item" onclick="playSound('click')">Run...</div>
+                </div>
+            </div>
+            <div class="xp-start-footer">
+                <div class="xp-footer-btn" onclick="toggleZoom()">
+                    <i class="fa-solid fa-right-from-bracket text-amber-300"></i>
+                    <span>Log Off</span>
+                </div>
+                <div class="xp-footer-btn" onclick="toggleZoom()">
+                    <i class="fa-solid fa-power-off text-red-400"></i>
+                    <span>Turn Off Computer</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'xp-startup') {
+                const notes = [
+                    { freq: 311.13, time: 0, duration: 1.0 },
+                    { freq: 466.16, time: 0.15, duration: 1.0 },
+                    { freq: 311.13, time: 0.30, duration: 1.2 },
+                    { freq: 415.30, time: 0.45, duration: 1.5 },
+                    { freq: 622.25, time: 0.60, duration: 1.8 }
+                ];
+
+                notes.forEach(n => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(n.freq, now + n.time);
+                    
+                    gain.gain.setValueAtTime(0, now + n.time);
+                    gain.gain.linearRampToValueAtTime(0.12, now + n.time + 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.duration);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + n.time);
+                    osc.stop(now + n.time + n.duration);
+                });
+            } else if (type === 'click') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(850, now);
+                osc.frequency.exponentialRampToValueAtTime(420, now + 0.04);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.04);
+            }
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('audio-icon');
+            icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+        }
+
+        let scene, camera, renderer, controls;
+        let crtScreenMesh, crtMonitorMesh;
+        let isZoomedIn = false;
+
+        const defaultCamPos = new THREE.Vector3(0, 1.75, 3.6);
+        const defaultCamLook = new THREE.Vector3(0, 1.05, 0);
+
+        const zoomedCamPos = new THREE.Vector3(0, 1.22, 1.02);
+        const zoomedCamLook = new THREE.Vector3(0, 1.22, 0);
+
+        let targetCamPos = defaultCamPos.clone();
+        let targetCamLook = defaultCamLook.clone();
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0c10);
+            scene.fog = new THREE.FogExp2(0x0a0c10, 0.12);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.copy(defaultCamPos);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.04;
+            controls.minDistance = 0.8;
+            controls.maxDistance = 5.5;
+            controls.target.copy(defaultCamLook);
+
+            // Lighting Setup
+            const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+            scene.add(ambient);
+
+            const roomLight = new THREE.PointLight(0xffe8c3, 1.2, 8);
+            roomLight.position.set(0, 3.2, 1.2);
+            roomLight.castShadow = true;
+            roomLight.shadow.mapSize.width = 1024;
+            roomLight.shadow.mapSize.height = 1024;
+            scene.add(roomLight);
+
+            const screenGlow = new THREE.PointLight(0x00a2ff, 1.4, 2.5);
+            screenGlow.position.set(0, 1.22, 0.3);
+            scene.add(screenGlow);
+
+            build3DRoom();
+            build3DWorkstation();
+
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('click', onCanvasClick);
+
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    toggleZoom();
+                } else if (e.code === 'Escape' && isZoomedIn) {
+                    toggleZoom(false);
+                }
+            });
+
+            animate();
+        }
+
+        function build3DRoom() {
+            // Floor
+            const floorGeo = new THREE.PlaneGeometry(10, 10);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Back Wall
+            const wallGeo = new THREE.PlaneGeometry(10, 6);
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const wall = new THREE.Mesh(wallGeo, wallMat);
+            wall.position.set(0, 3, -2);
+            wall.receiveShadow = true;
+            scene.add(wall);
+        }
+
+        function build3DWorkstation() {
+            // Wooden Desk
+            const deskGeo = new THREE.BoxGeometry(2.4, 0.1, 1.2);
+            const deskMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.4 });
+            const desk = new THREE.Mesh(deskGeo, deskMat);
+            desk.position.set(0, 0.75, 0);
+            desk.castShadow = true;
+            desk.receiveShadow = true;
+            scene.add(desk);
+
+            // Legs
+            const legGeo = new THREE.BoxGeometry(0.08, 0.75, 1.1);
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x271910 });
+            
+            const legL = new THREE.Mesh(legGeo, legMat);
+            legL.position.set(-1.1, 0.375, 0);
+            legL.castShadow = true;
+            scene.add(legL);
+
+            const legR = new THREE.Mesh(legGeo, legMat);
+            legR.position.set(1.1, 0.375, 0);
+            legR.castShadow = true;
+            scene.add(legR);
+
+            // CRT Monitor Box
+            const crtMat = new THREE.MeshStandardMaterial({ color: 0xdcd5c6, roughness: 0.5 });
+            const crtBodyGeo = new THREE.BoxGeometry(0.92, 0.76, 0.7);
+            crtMonitorMesh = new THREE.Mesh(crtBodyGeo, crtMat);
+            crtMonitorMesh.position.set(0, 1.22, -0.2);
+            crtMonitorMesh.castShadow = true;
+            crtMonitorMesh.receiveShadow = true;
+            scene.add(crtMonitorMesh);
+
+            // Stand Base
+            const standGeo = new THREE.BoxGeometry(0.5, 0.08, 0.4);
+            const stand = new THREE.Mesh(standGeo, crtMat);
+            stand.position.set(0, 0.82, -0.2);
+            stand.castShadow = true;
+            scene.add(stand);
+
+            // CRT Display Surface
+            const screenGeo = new THREE.PlaneGeometry(0.74, 0.55);
+            const screenMat = new THREE.MeshBasicMaterial({ color: 0x1062d1 });
+            crtScreenMesh = new THREE.Mesh(screenGeo, screenMat);
+            crtScreenMesh.position.set(0, 1.22, 0.152);
+            crtScreenMesh.name = 'crt-screen';
+            scene.add(crtScreenMesh);
+
+            // PC Tower
+            const towerGeo = new THREE.BoxGeometry(0.36, 0.82, 0.7);
+            const tower = new THREE.Mesh(towerGeo, crtMat);
+            tower.position.set(0.88, 1.2, -0.2);
+            tower.castShadow = true;
+            tower.receiveShadow = true;
+            scene.add(tower);
+
+            // Tower LED
+            const ledGeo = new THREE.SphereGeometry(0.015, 8, 8);
+            const ledMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+            const led = new THREE.Mesh(ledGeo, ledMat);
+            led.position.set(0.98, 0.98, 0.151);
+            scene.add(led);
+
+            // Keyboard & Mouse
+            const kbGeo = new THREE.BoxGeometry(0.72, 0.03, 0.26);
+            const kbMat = new THREE.MeshStandardMaterial({ color: 0xcac2b2 });
+            const keyboard = new THREE.Mesh(kbGeo, kbMat);
+            keyboard.position.set(-0.1, 0.81, 0.3);
+            keyboard.rotation.x = 0.08;
+            keyboard.castShadow = true;
+            scene.add(keyboard);
+
+            const mouseGeo = new THREE.BoxGeometry(0.1, 0.04, 0.14);
+            const mouse = new THREE.Mesh(mouseGeo, crtMat);
+            mouse.position.set(0.66, 0.82, 0.3);
+            mouse.castShadow = true;
+            scene.add(mouse);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onCanvasClick(e) {
+            const mouse = new THREE.Vector2(
+                (e.clientX / window.innerWidth) * 2 - 1,
+                -(e.clientY / window.innerHeight) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects([crtScreenMesh, crtMonitorMesh]);
+            if (intersects.length > 0 && !isZoomedIn) {
+                toggleZoom(true);
+            }
+        }
+
+        function toggleZoom(forceState) {
+            isZoomedIn = forceState !== undefined ? forceState : !isZoomedIn;
+
+            const btnText = document.getElementById('zoom-btn-text');
+            const hint = document.getElementById('camera-hint');
+            const xpOverlay = document.getElementById('xp-desktop-overlay');
+
+            if (isZoomedIn) {
+                targetCamPos.copy(zoomedCamPos);
+                targetCamLook.copy(zoomedCamLook);
+                controls.enableRotate = false;
+                btnText.innerText = "Exit to 3D Room";
+                hint.style.opacity = '0';
+                
+                playSound('xp-startup');
+
+                setTimeout(() => {
+                    xpOverlay.classList.add('active');
+                }, 500);
+            } else {
+                targetCamPos.copy(defaultCamPos);
+                targetCamLook.copy(defaultCamLook);
+                controls.enableRotate = true;
+                btnText.innerText = "Enter XP Desktop";
+                hint.style.opacity = '1';
+                xpOverlay.classList.remove('active');
+                playSound('click');
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            camera.position.lerp(targetCamPos, 0.08);
+            controls.target.lerp(targetCamLook, 0.08);
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        let windowCount = 0;
+        let activeWindows = {};
+        let topZIndex = 100;
+
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            document.getElementById('xp-clock').innerText = `${hours}:${minutes} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function selectIcon(el) {
+            document.querySelectorAll('.desktop-icon').forEach(icon => icon.classList.remove('selected'));
+            el.classList.add('selected');
+            playSound('click');
+        }
+
+        function toggleStartMenu(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('xp-start-menu');
+            const isVisible = menu.style.display === 'flex';
+            menu.style.display = isVisible ? 'none' : 'flex';
+            playSound('click');
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('xp-start-menu');
+            if (menu && !menu.contains(e.target) && !e.target.closest('.xp-start-btn')) {
+                menu.style.display = 'none';
+            }
+        });
+
+        function openApp(appType) {
+            playSound('click');
+            const winId = 'win-' + (++windowCount);
+
+            let title = 'Application';
+            let iconClass = 'fa-window-maximize';
+            let contentHTML = '';
+            let width = 640;
+            let height = 440;
+
+            if (appType === 'bloodbath') {
+                title = 'Bloodbath - Geometry Dash';
+                iconClass = 'fa-skull text-red-500';
+                width = 720;
+                height = 480;
+                contentHTML = `
+                    <div class="bloodbath-header-banner">
+                        <div class="flex items-center gap-2">
+                            <span>Level: <b class="text-white">Bloodbath</b> by Riot & More</span>
+                        </div>
+                        <div class="red-demon-badge">
+                            <i class="fa-solid fa-fire"></i>
+                            <span>Legendary Extreme Demon</span>
+                        </div>
+                    </div>
+                    <div class="app-toolbar">
+                        <div class="flex items-center gap-2">
+                            <button class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600 text-xs" onclick="reloadIframe('${winId}')">
+                                <i class="fa-solid fa-rotate-right mr-1"></i> Reload
+                            </button>
+                            <button class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600 text-xs" onclick="window.open('bloodbath.html', '_blank')">
+                                <i class="fa-solid fa-up-right-from-square mr-1"></i> Open External
+                            </button>
+                        </div>
+                        <span class="text-slate-400 text-[11px]">Embedding: <code class="text-red-400 font-mono">bloodbath.html</code></span>
+                    </div>
+                    <div class="relative w-full h-full bg-black flex-grow overflow-hidden">
+                        <iframe id="iframe-${winId}" src="bloodbath.html" style="width:100%; height:100%; border:none; background:#000;" title="Bloodbath"></iframe>
+                    </div>
+                `;
+            } else if (appType === 'gd') {
+                title = 'Tidal Wave - Geometry Dash Video';
+                iconClass = 'fa-gamepad text-cyan-400';
+                width = 680;
+                height = 460;
+                contentHTML = `
+                    <div class="app-toolbar">
+                        <span class="text-cyan-300 font-bold">Geometry Dash Player - Tidal Wave</span>
+                        <span class="text-slate-400 text-[11px]">File: <code class="text-cyan-300 font-mono">Tidal-Wave.mp4</code></span>
+                    </div>
+                    <div class="relative w-full h-full bg-black flex flex-col justify-center items-center overflow-hidden">
+                        <video src="Tidal-Wave.mp4" controls autoplay loop style="width:100%; height:100%; object-fit:contain; background:#000;" onerror="this.style.display='none'; document.getElementById('gd-fallback-${winId}').style.display='flex';">
+                        </video>
+                        <div id="gd-fallback-${winId}" class="hidden absolute inset-0 bg-slate-950/95 flex-col items-center justify-center p-6 text-center text-cyan-400 font-sans">
+                            <i class="fa-solid fa-compact-disc text-6xl text-cyan-400 mb-3 animate-spin" style="animation-duration: 8s;"></i>
+                            <h2 class="text-2xl font-bold text-white mb-2">Geometry Dash: Tidal Wave</h2>
+                            <p class="text-xs text-cyan-200/80 max-w-md mb-4">
+                                Video file player target: <code class="bg-cyan-950 px-2 py-1 rounded text-cyan-300 font-mono">Tidal-Wave.mp4</code>
+                            </p>
+                            <div class="bg-cyan-900/40 border border-cyan-500/30 rounded-lg p-3 text-xs text-white max-w-sm">
+                                <i class="fa-solid fa-circle-info text-cyan-400 mr-1"></i> Save your <b>Tidal-Wave.mp4</b> in the same directory to stream video directly!
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (appType === 'mycomputer') {
+                title = 'My Computer';
+                iconClass = 'fa-desktop text-blue-500';
+                contentHTML = `
+                    <div class="p-4 bg-white h-full font-sans text-xs flex flex-col gap-4 overflow-y-auto">
+                        <div class="border-b pb-3">
+                            <span class="font-bold text-gray-700">Hard Disk Drives</span>
+                            <div class="flex items-center gap-4 mt-2">
+                                <i class="fa-solid fa-hard-drive text-3xl text-gray-500"></i>
+                                <div>
+                                    <div class="font-bold">Local Disk (C:)</div>
+                                    <div class="w-48 bg-gray-200 rounded-full h-2.5 mt-1 border">
+                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 52%"></div>
+                                    </div>
+                                    <div class="text-gray-500 text-[10px] mt-0.5">20.8 GB free of 40.0 GB</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="font-bold text-gray-700">Applications & Media</span>
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                <div class="flex items-center gap-2 p-2 border rounded bg-slate-50">
+                                    <i class="fa-solid fa-file-code text-red-600 text-lg"></i>
+                                    <div>
+                                        <div class="font-bold">bloodbath.html</div>
+                                        <div class="text-[10px] text-gray-500">Embedded App</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 p-2 border rounded bg-slate-50">
+                                    <i class="fa-solid fa-file-video text-cyan-600 text-lg"></i>
+                                    <div>
+                                        <div class="font-bold">Tidal-Wave.mp4</div>
+                                        <div class="text-[10px] text-gray-500">Media Video</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (appType === 'notepad') {
+                title = 'Untitled - Notepad';
+                iconClass = 'fa-file-lines text-amber-600';
+                width = 480;
+                height = 320;
+                contentHTML = `
+                    <div class="xp-menu-bar">
+                        <span class="xp-menu-item">File</span>
+                        <span class="xp-menu-item">Edit</span>
+                        <span class="xp-menu-item">Format</span>
+                        <span class="xp-menu-item">Help</span>
+                    </div>
+                    <textarea class="w-full h-full p-2 border-none outline-none font-mono text-sm resize-none bg-white" placeholder="Type notes here...">Windows XP Workspace Active
+
+Applications Configured:
+1. Bloodbath (Embeds bloodbath.html iframe)
+2. Tidal Wave (Plays Tidal-Wave.mp4)
+3. Notepad (Text editor)
+4. Internet Explorer & System Drives</textarea>
+                `;
+            } else if (appType === 'browser') {
+                title = 'Internet Explorer - GD Portal';
+                iconClass = 'fa-brands fa-internet-explorer text-blue-500';
+                width = 580;
+                height = 380;
+                contentHTML = `
+                    <div class="bg-gray-100 p-1.5 border-b flex items-center gap-2 text-xs">
+                        <span class="text-gray-600 font-bold">Address</span>
+                        <input type="text" value="http://www.geometrydash.com" class="flex-grow border px-2 py-0.5 rounded bg-white text-gray-800" readonly>
+                        <button class="px-3 py-0.5 bg-blue-600 text-white font-bold rounded">Go</button>
+                    </div>
+                    <div class="p-4 bg-white h-full overflow-y-auto text-xs font-sans">
+                        <div class="flex justify-between items-center border-b-2 border-red-600 pb-2 mb-3">
+                            <h1 class="text-2xl font-bold text-blue-800">Geometry<span class="text-red-600">Dash</span></h1>
+                            <span class="text-gray-500">Extreme Demon Directory</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-red-50 p-3 border border-red-200 rounded">
+                                <h3 class="font-bold text-red-900 mb-1">Featured Level: Bloodbath</h3>
+                                <p class="text-gray-600 text-[11px] mb-2">Embedded iframe application running bloodbath.html directly in browser desktop.</p>
+                                <button onclick="openApp('bloodbath')" class="bg-red-600 text-white font-bold px-3 py-1 rounded">Launch Bloodbath</button>
+                            </div>
+                            <div class="bg-cyan-50 p-3 border border-cyan-200 rounded">
+                                <h3 class="font-bold text-cyan-900 mb-1">Featured Video: Tidal Wave</h3>
+                                <p class="text-gray-600 text-[11px] mb-2">Video player for local Tidal-Wave.mp4 file stream.</p>
+                                <button onclick="openApp('gd')" class="bg-cyan-600 text-white font-bold px-3 py-1 rounded">Play Tidal Wave</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (appType === 'recycle') {
+                title = 'Recycle Bin';
+                iconClass = 'fa-trash-can text-gray-500';
+                contentHTML = `
+                    <div class="p-4 bg-white h-full font-sans text-xs flex flex-col justify-between">
+                        <div>
+                            <div class="font-bold text-gray-700 mb-2">Deleted Items</div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2 p-1.5 hover:bg-blue-50 border rounded">
+                                    <i class="fa-solid fa-file-text text-gray-400"></i>
+                                    <span>draft_notes.txt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const winEl = document.createElement('div');
+            winEl.className = 'xp-window pointer-events-auto';
+            winEl.id = winId;
+            winEl.style.width = width + 'px';
+            winEl.style.height = height + 'px';
+            winEl.style.left = (90 + (windowCount * 25) % 180) + 'px';
+            winEl.style.top = (50 + (windowCount * 25) % 140) + 'px';
+            winEl.style.zIndex = ++topZIndex;
+
+            winEl.innerHTML = `
+                <div class="xp-title-bar" onmousedown="startDrag(event, '${winId}')">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid ${iconClass}"></i>
+                        <span>${title}</span>
+                    </div>
+                    <div class="xp-window-btn-group">
+                        <div class="xp-win-btn xp-btn-min" onclick="minimizeWin('${winId}')">_</div>
+                        <div class="xp-win-btn xp-btn-max" onclick="maximizeWin('${winId}')">🗖</div>
+                        <div class="xp-win-btn xp-btn-close" onclick="closeWin('${winId}')">✕</div>
+                    </div>
+                </div>
+                <div class="flex-grow overflow-hidden flex flex-col relative">
+                    ${contentHTML}
+                </div>
+            `;
+
+            winEl.addEventListener('mousedown', () => bringToFront(winId));
+            document.getElementById('windows-container').appendChild(winEl);
+
+            addTaskbarTab(winId, title, iconClass);
+            activeWindows[winId] = { el: winEl, title, isMaximized: false };
+        }
+
+        function reloadIframe(winId) {
+            const iframe = document.getElementById(`iframe-${winId}`);
+            if (iframe) {
+                iframe.src = iframe.src;
+                playSound('click');
+            }
+        }
+
+        function bringToFront(winId) {
+            if (activeWindows[winId]) {
+                activeWindows[winId].el.style.zIndex = ++topZIndex;
+            }
+        }
+
+        function closeWin(winId) {
+            playSound('click');
+            const win = document.getElementById(winId);
+            if (win) win.remove();
+            removeTaskbarTab(winId);
+            delete activeWindows[winId];
+        }
+
+        function minimizeWin(winId) {
+            playSound('click');
+            const win = document.getElementById(winId);
+            if (win) win.style.display = 'none';
+        }
+
+        function maximizeWin(winId) {
+            playSound('click');
+            const win = activeWindows[winId];
+            if (!win) return;
+
+            if (!win.isMaximized) {
+                win.prevLeft = win.el.style.left;
+                win.prevTop = win.el.style.top;
+                win.prevWidth = win.el.style.width;
+                win.prevHeight = win.el.style.height;
+
+                win.el.style.left = '0px';
+                win.el.style.top = '0px';
+                win.el.style.width = '100%';
+                win.el.style.height = 'calc(100% - 32px)';
+                win.isMaximized = true;
+            } else {
+                win.el.style.left = win.prevLeft;
+                win.el.style.top = win.prevTop;
+                win.el.style.width = win.prevWidth;
+                win.el.style.height = win.prevHeight;
+                win.isMaximized = false;
+            }
+        }
+
+        function addTaskbarTab(winId, title, iconClass) {
+            const tabsContainer = document.getElementById('taskbar-tabs');
+            const tab = document.createElement('div');
+            tab.id = 'tab-' + winId;
+            tab.className = 'flex items-center gap-2 px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded border border-blue-400 cursor-pointer max-w-[160px] truncate';
+            tab.innerHTML = `<i class="fa-solid ${iconClass}"></i><span class="truncate">${title}</span>`;
+            tab.onclick = () => {
+                const win = document.getElementById(winId);
+                if (win) {
+                    if (win.style.display === 'none') {
+                        win.style.display = 'flex';
+                        bringToFront(winId);
+                    } else {
+                        bringToFront(winId);
+                    }
+                }
+            };
+            tabsContainer.appendChild(tab);
+        }
+
+        function removeTaskbarTab(winId) {
+            const tab = document.getElementById('tab-' + winId);
+            if (tab) tab.remove();
+        }
+
+        // Mouse Dragging Event Listeners
+        let dragWin = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function startDrag(e, winId) {
+            dragWin = document.getElementById(winId);
+            bringToFront(winId);
+            dragOffsetX = e.clientX - dragWin.offsetLeft;
+            dragOffsetY = e.clientY - dragWin.offsetTop;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (dragWin) {
+                dragWin.style.left = (e.clientX - dragOffsetX) + 'px';
+                dragWin.style.top = (e.clientY - dragOffsetY) + 'px';
+            }
+        }
+
+        function stopDrag() {
+            dragWin = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        window.onload = function() {
+            init3D();
+        };
+    </script>
+</body>
+</html>
